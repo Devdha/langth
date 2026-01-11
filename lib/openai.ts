@@ -1,8 +1,15 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 /**
  * 주제별로 프롬프트에 사용할 설명을 반환합니다.
@@ -117,7 +124,7 @@ Respond ONLY in this JSON format:
   }
 
   try {
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: 'gpt-5.2',
       input,
       reasoning: {

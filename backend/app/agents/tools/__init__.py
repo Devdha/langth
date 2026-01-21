@@ -1,12 +1,18 @@
-"""Tools for LLM-based therapy sentence generation.
+"""파이프라인 도구 모듈.
 
-This package provides tools for the 4-stage generation pipeline:
-1. Generate - Generate candidate sentences using LLM
-2. Validate - Validate phoneme requirements
-3. Score - Score sentences based on quality metrics
-4. Diversify - Ensure diversity in final selection
+4단계 파이프라인의 각 도구를 제공합니다:
+1. generate_candidates: LLM으로 후보 생성
+2. validate_sentences: 하드 제약 검사
+3. score_sentences: 점수 계산 (TODO)
+4. diversify_results: 다양성 보장 (TODO)
 """
 
 from .generate import generate_candidates
+from .validate import validate_sentences, ValidationResult, get_passed_sentences
 
-__all__ = ["generate_candidates"]
+__all__ = [
+    "generate_candidates",
+    "validate_sentences",
+    "ValidationResult",
+    "get_passed_sentences",
+]

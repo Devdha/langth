@@ -71,6 +71,14 @@ export function useGenerateV2(
   }, []);
 
   const generate = useCallback(async (settings: GameSettingsV2) => {
+    // Cancel any in-flight request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+
     // Reset state
     setLoading(true);
     setError(null);

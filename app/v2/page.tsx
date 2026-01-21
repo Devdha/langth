@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
@@ -31,68 +31,54 @@ const DEFAULT_SETTINGS: GameSettingsV2 = {
 
 export default function V2Page() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [localItems, setLocalItems] = useState<TherapyItemV2[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [settings, setSettings] = useState<GameSettingsV2>(DEFAULT_SETTINGS);
-  const [isOnline, setIsOnline] = useState(true);
+  // Use lazy initialization to avoid hydration issues
+  const [localItems, setLocalItems] = useState<TherapyItemV2[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_V2);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [isInitialized, setIsInitialized] = useState(() => typeof window !== 'undefined');
+  const [settings, setSettings] = useState<GameSettingsV2>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SETTINGS;
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY_V2);
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch { return DEFAULT_SETTINGS; }
+  });
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof window !== 'undefined' ? navigator.onLine : true
+  );
 
   // Use the custom hook for API calls
+  // Memoized callback to avoid recreating generate function on every render
+  const handleGenerateSuccess = useCallback((items: TherapyItemV2[]) => {
+    setLocalItems(items);
+  }, []);
+
   const {
     generate,
     cancel: cancelGenerate,
     loading,
     error,
-    items: generatedItems,
     warning,
     meta,
     clearWarning,
-  } = useGenerateV2((items) => {
-    // On successful generation, update local items
-    setLocalItems(items);
-  });
+  } = useGenerateV2(handleGenerateSuccess);
 
-  // Load from localStorage
+  // Online/offline detection (subscribe to events only)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedItems = localStorage.getItem(STORAGE_KEY_V2);
-      const savedSettings = localStorage.getItem(SETTINGS_KEY_V2);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-      if (savedItems) {
-        try {
-          setLocalItems(JSON.parse(savedItems));
-        } catch (e) {
-          console.error('Failed to parse saved items', e);
-        }
-      }
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
-      if (savedSettings) {
-        try {
-          setSettings(JSON.parse(savedSettings));
-        } catch (e) {
-          console.error('Failed to parse saved settings', e);
-        }
-      }
-
-      setIsInitialized(true);
-    }
-  }, []);
-
-  // Online/offline detection
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsOnline(navigator.onLine);
-
-      const handleOnline = () => setIsOnline(true);
-      const handleOffline = () => setIsOnline(false);
-
-      window.addEventListener('online', handleOnline);
-      window.addEventListener('offline', handleOffline);
-
-      return () => {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-      };
-    }
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Save items to localStorage

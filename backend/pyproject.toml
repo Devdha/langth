@@ -13,6 +13,8 @@ dependencies = [
     "pronouncing>=0.2.0",
     "g2p-en>=2.1.0",
     "hgtk>=0.2.0",
+    "six>=1.16.0",  # Required by hgtk
+    "setuptools>=70.0.0",  # Required by pronouncing (pkg_resources)
     "python-dotenv>=1.0.0",
     "httpx>=0.27.0",
 ]

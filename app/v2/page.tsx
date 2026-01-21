@@ -206,11 +206,11 @@ export default function V2Page() {
 
   return (
     <main className="min-h-screen bg-background text-foreground pb-20">
-      {/* TODO: Update Header to accept isV2 prop for V2-specific styling */}
       <Header
         currentMode="list"
         onModeChange={() => {}}
         onNewGame={() => setIsSettingsOpen(true)}
+        isV2={true}
       />
 
       {/* V2 Beta Badge */}

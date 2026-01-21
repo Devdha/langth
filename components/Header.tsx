@@ -8,9 +8,10 @@ interface HeaderProps {
   currentMode: GameMode;
   onModeChange: (mode: GameMode) => void;
   onNewGame: () => void;
+  isV2?: boolean;
 }
 
-export default function Header({ currentMode, onModeChange, onNewGame }: HeaderProps) {
+export default function Header({ currentMode, onModeChange, onNewGame, isV2 = false }: HeaderProps) {
   return (
     <header className="w-full bg-white/50 backdrop-blur-md border-b-4 border-primary/20 p-3 md:p-4 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-3">

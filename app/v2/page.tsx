@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
+import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
 import {
   GameSettingsV2,
   TherapyItemV2,
@@ -371,21 +372,13 @@ export default function V2Page() {
         </AnimatePresence>
       </div>
 
-      {/* TODO: Create V2-specific SettingsPanel component */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-4">V2 Settings Panel</h2>
-            <p className="text-gray-600 mb-4">Settings panel not yet implemented</p>
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="w-full px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors"
-            >
-              닫기
-            </button>
-          </div>
-        </div>
-      )}
+      {/* V2 Settings Panel */}
+      <SettingsPanelV2
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onGenerate={handleGenerate}
+        initialSettings={settings}
+      />
     </main>
   );
 }

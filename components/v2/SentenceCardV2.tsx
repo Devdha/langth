@@ -57,6 +57,7 @@ export default function SentenceCardV2({
           onClick={() => onPlay(item)}
           className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
           title="읽어보기"
+          aria-label="읽어보기"
         >
           <Volume2 size={16} />
         </button>
@@ -64,6 +65,7 @@ export default function SentenceCardV2({
           onClick={() => onEdit(item)}
           className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-info hover:text-white transition-colors"
           title="수정"
+          aria-label="수정"
         >
           <Edit2 size={16} />
         </button>
@@ -71,6 +73,7 @@ export default function SentenceCardV2({
           onClick={() => onDelete(item.id)}
           className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-warning hover:text-white transition-colors"
           title="삭제"
+          aria-label="삭제"
         >
           <Trash2 size={16} />
         </button>
@@ -102,7 +105,14 @@ export default function SentenceCardV2({
             <span className="text-xs font-bold text-gray-500">적합도</span>
             <span className="text-xs font-bold text-gray-700">{scorePercentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div
+            className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={scorePercentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="적합도"
+          >
             <div
               className="h-full bg-gradient-to-r from-primary via-secondary to-accent transition-all duration-500"
               style={{ width: `${scorePercentage}%` }}

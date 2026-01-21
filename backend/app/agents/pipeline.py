@@ -19,6 +19,7 @@ from app.agents.tools import (
     score_sentences,
     diversify_results,
 )
+from app.agents.guardrails import filter_unsafe_sentences
 
 
 @dataclass
@@ -71,8 +72,11 @@ async def run_pipeline(
 
         candidates = await generate_candidates(request, batch_size)
 
+        # 가드레일: 안전하지 않은 문장 필터링
+        safe_candidates = filter_unsafe_sentences(candidates)
+
         # 2. Validate
-        results = validate_sentences(candidates, request)
+        results = validate_sentences(safe_candidates, request)
         passed = get_passed_sentences(results)
         all_validated.extend(passed)
 

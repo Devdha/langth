@@ -56,7 +56,7 @@ class TestGenerateEndpointValidation:
 
     @pytest.mark.asyncio
     async def test_valid_request_structure(self, client):
-        """Should accept valid request structure (returns 501 until pipeline is implemented)."""
+        """Should accept valid request structure (returns 200 or 500 if API key missing)."""
         response = await client.post(
             "/api/v2/generate",
             json={
@@ -69,8 +69,8 @@ class TestGenerateEndpointValidation:
                 "therapyApproach": "minimal_pairs",
             },
         )
-        # Pipeline not implemented yet, so 501 is expected
-        assert response.status_code in [200, 501]
+        # 200 if pipeline works, 500 if API key is missing
+        assert response.status_code in [200, 500]
 
     @pytest.mark.asyncio
     async def test_invalid_age(self, client):
@@ -155,7 +155,8 @@ class TestGenerateEndpointValidation:
                 "therapyApproach": "core_vocabulary",
             },
         )
-        assert response.status_code in [200, 501]
+        # 200 if pipeline works, 500 if API key is missing
+        assert response.status_code in [200, 500]
 
     @pytest.mark.asyncio
     async def test_optional_fields(self, client):
@@ -174,4 +175,5 @@ class TestGenerateEndpointValidation:
                 "communicativeFunction": "request",
             },
         )
-        assert response.status_code in [200, 501]
+        # 200 if pipeline works, 500 if API key is missing
+        assert response.status_code in [200, 500]

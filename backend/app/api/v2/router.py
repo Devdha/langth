@@ -1,7 +1,9 @@
-"""FastAPI router for the v2 API.
+"""v2 API 라우터.
 
-This module defines the API endpoints for therapy sentence generation.
+치료용 문장 생성 API 엔드포인트를 제공합니다.
 """
+
+import logging
 
 from fastapi import APIRouter, HTTPException
 
@@ -11,6 +13,9 @@ from .schemas import (
     GenerateRequestV2,
     GenerateResponseV2,
 )
+from app.agents.pipeline import run_pipeline
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2", tags=["v2"])
 
@@ -19,37 +24,45 @@ router = APIRouter(prefix="/api/v2", tags=["v2"])
     "/generate",
     response_model=GenerateResponseV2 | ErrorResponseV2,
     responses={
-        501: {"model": ErrorResponseV2},
+        500: {"model": ErrorResponseV2},
     },
 )
 async def generate_sentences(request: GenerateRequestV2):
-    """Generate therapy sentences based on the provided configuration.
+    """치료용 문장을 생성합니다.
 
-    This endpoint generates sentences for speech therapy practice using a
-    4-stage pipeline:
-    1. Generate: LLM generates candidate sentences
-    2. Validate: Hard constraint validation
-    3. Score: Quality scoring
-    4. Diversify: Ensure diversity in output
+    4단계 파이프라인:
+    1. Generate: LLM으로 후보 생성
+    2. Validate: 하드 제약 검사
+    3. Score: 점수 계산
+    4. Diversify: 다양성 보장
 
     Args:
-        request: The sentence generation request configuration.
+        request: 생성 요청
 
     Returns:
-        GenerateResponseV2 on success with generated sentences.
-        ErrorResponseV2 on failure with error details.
-
-    Raises:
-        HTTPException: 501 if pipeline is not yet implemented.
+        성공 시: {success: true, data: {items, meta}}
+        실패 시: HTTPException with error details
     """
-    # TODO: Connect to pipeline implementation
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "success": False,
-            "error": {
-                "code": ErrorCode.SERVICE_UNAVAILABLE.value,
-                "message": "Pipeline is not yet implemented.",
+    try:
+        result = await run_pipeline(request)
+
+        return {
+            "success": True,
+            "data": {
+                "items": [item.model_dump() for item in result.items],
+                "meta": result.meta,
             },
-        },
-    )
+        }
+    except Exception as e:
+        logger.exception("Pipeline failed")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": {
+                    "code": ErrorCode.GENERATION_FAILED.value,
+                    "message": "문장 생성에 실패했습니다.",
+                    "details": str(e),
+                },
+            },
+        )

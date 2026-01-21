@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
+import SentenceListV2 from "@/components/v2/SentenceListV2";
 import { useGenerateV2 } from "@/hooks/useGenerateV2";
 import {
   GameSettingsV2,
@@ -250,47 +251,12 @@ export default function V2Page() {
                   )}
                 </div>
               </div>
-              {/* TODO: Create V2-specific SentenceList component with highlighting */}
-              <div className="space-y-4">
-                {localItems.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                  >
-                    <p className="text-lg font-medium text-gray-800">{item.text}</p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                      <span>어절: {item.wordCount}</span>
-                      <span>•</span>
-                      <span>점수: {item.score.toFixed(2)}</span>
-                      <span>•</span>
-                      <span>매칭: {item.matchedWords.length}개</span>
-                    </div>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        onClick={() => handlePlay(item)}
-                        className="px-3 py-1 text-xs font-bold text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                      >
-                        듣기
-                      </button>
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="px-3 py-1 text-xs font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="px-3 py-1 text-xs font-bold text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <SentenceListV2
+                items={localItems}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                onPlay={handlePlay}
+              />
             </motion.div>
           )}
         </AnimatePresence>

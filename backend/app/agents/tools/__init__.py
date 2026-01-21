@@ -4,12 +4,13 @@
 1. generate_candidates: LLM으로 후보 생성
 2. validate_sentences: 하드 제약 검사
 3. score_sentences: 점수 계산
-4. diversify_results: 다양성 보장 (TODO)
+4. diversify_results: 다양성 보장
 """
 
 from .generate import generate_candidates
 from .validate import validate_sentences, ValidationResult, get_passed_sentences
 from .score import score_sentences, ScoredSentence
+from .diversify import diversify_results
 
 __all__ = [
     "generate_candidates",
@@ -18,4 +19,5 @@ __all__ = [
     "get_passed_sentences",
     "score_sentences",
     "ScoredSentence",
+    "diversify_results",
 ]

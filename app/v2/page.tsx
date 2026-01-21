@@ -1,20 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
+import { useGenerateV2 } from "@/hooks/useGenerateV2";
 import {
   GameSettingsV2,
   TherapyItemV2,
-  GenerateRequestV2,
-  GenerateResponseV2,
-  ErrorResponseV2
 } from "@/types/v2";
 
 const STORAGE_KEY_V2 = 'talk-talk-vending-v2-items';
 const SETTINGS_KEY_V2 = 'talk-talk-vending-v2-settings';
-const LOADING_TIMEOUT = 30000; // 30 seconds
 
 const DEFAULT_SETTINGS: GameSettingsV2 = {
   language: 'ko',
@@ -34,14 +31,25 @@ const DEFAULT_SETTINGS: GameSettingsV2 = {
 
 export default function V2Page() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [items, setItems] = useState<TherapyItemV2[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [localItems, setLocalItems] = useState<TherapyItemV2[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
   const [settings, setSettings] = useState<GameSettingsV2>(DEFAULT_SETTINGS);
   const [isOnline, setIsOnline] = useState(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Use the custom hook for API calls
+  const {
+    generate,
+    cancel: cancelGenerate,
+    loading,
+    error,
+    items: generatedItems,
+    warning,
+    meta,
+    clearWarning,
+  } = useGenerateV2((items) => {
+    // On successful generation, update local items
+    setLocalItems(items);
+  });
 
   // Load from localStorage
   useEffect(() => {
@@ -51,7 +59,7 @@ export default function V2Page() {
 
       if (savedItems) {
         try {
-          setItems(JSON.parse(savedItems));
+          setLocalItems(JSON.parse(savedItems));
         } catch (e) {
           console.error('Failed to parse saved items', e);
         }
@@ -90,9 +98,9 @@ export default function V2Page() {
   // Save items to localStorage
   useEffect(() => {
     if (isInitialized && typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(items));
+      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(localItems));
     }
-  }, [items, isInitialized]);
+  }, [localItems, isInitialized]);
 
   // Save settings to localStorage
   useEffect(() => {
@@ -103,90 +111,20 @@ export default function V2Page() {
 
   const handleReset = () => {
     if (confirm('모든 문장을 삭제하시겠습니까?')) {
-      setItems([]);
-      setError(null);
+      setLocalItems([]);
     }
   };
 
-  // TODO: Wire this up to SettingsPanelV2 when it's created
   const handleGenerate = async (newSettings: GameSettingsV2) => {
-    if (!isOnline) {
-      setError('인터넷에 연결되어 있지 않습니다. 연결 후 다시 시도해주세요.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setWarning(null);
+    // Update settings state
     setSettings(newSettings);
 
-    // AbortController setup
-    abortControllerRef.current = new AbortController();
-    const timeoutId = setTimeout(() => {
-      abortControllerRef.current?.abort();
-    }, LOADING_TIMEOUT);
-
-    try {
-      // TODO: Create API route at /api/v2/generate
-      const requestBody: GenerateRequestV2 = {
-        language: newSettings.language,
-        age: newSettings.age,
-        count: newSettings.count,
-        target: newSettings.target,
-        sentenceLength: newSettings.sentenceLength,
-        diagnosis: newSettings.diagnosis,
-        therapyApproach: newSettings.therapyApproach,
-        theme: newSettings.theme || undefined,
-        communicativeFunction: newSettings.communicativeFunction || undefined,
-      };
-
-      const res = await fetch('/api/v2/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-        signal: abortControllerRef.current.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const data: GenerateResponseV2 | ErrorResponseV2 = await res.json();
-
-      if (res.ok && data.success) {
-        const responseData = data.data;
-        setItems(responseData.items);
-
-        // Show warning if fewer items generated than requested
-        if (responseData.meta.generatedCount < newSettings.count) {
-          setWarning(
-            `요청한 ${newSettings.count}개 중 ${responseData.meta.generatedCount}개만 생성되었습니다. 조건에 맞는 문장이 부족할 수 있습니다.`
-          );
-        }
-      } else if (!data.success) {
-        setError(data.error.message || '문장 생성에 실패했습니다. 다시 시도해주세요.');
-      }
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err instanceof Error && err.name === 'AbortError') {
-        setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-      } else {
-        console.error("Failed to generate", err);
-        setError('서버 연결에 실패했습니다. 다시 시도해주세요.');
-      }
-    } finally {
-      setLoading(false);
-      abortControllerRef.current = null;
-    }
-  };
-
-  const handleCancelGenerate = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setLoading(false);
-      abortControllerRef.current = null;
-    }
+    // Call the hook's generate function
+    await generate(newSettings);
   };
 
   const handleDelete = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+    setLocalItems(localItems.filter(item => item.id !== id));
   };
 
   // TODO: Implement handleEdit with V2-specific edit modal
@@ -236,7 +174,7 @@ export default function V2Page() {
           >
             <span>⚠️ {warning}</span>
             <button
-              onClick={() => setWarning(null)}
+              onClick={clearWarning}
               className="text-yellow-500 hover:text-yellow-700 font-bold"
             >
               ✕
@@ -258,7 +196,7 @@ export default function V2Page() {
                 문장을 만들고 있어요...
               </p>
               <button
-                onClick={handleCancelGenerate}
+                onClick={cancelGenerate}
                 className="px-4 py-2 text-sm font-bold text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 취소
@@ -281,7 +219,7 @@ export default function V2Page() {
                 다시 시도하기
               </button>
             </motion.div>
-          ) : items.length === 0 ? (
+          ) : localItems.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -314,9 +252,9 @@ export default function V2Page() {
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400 font-bold bg-white px-3 py-1 rounded-lg border border-gray-100 shadow-sm">
-                    총 {items.length}개
+                    총 {localItems.length}개
                   </span>
-                  {items.length > 0 && (
+                  {localItems.length > 0 && (
                     <button
                       onClick={handleReset}
                       className="px-3 py-1 text-sm font-bold text-red-500 bg-red-50 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
@@ -328,7 +266,7 @@ export default function V2Page() {
               </div>
               {/* TODO: Create V2-specific SentenceList component with highlighting */}
               <div className="space-y-4">
-                {items.map((item, index) => (
+                {localItems.map((item, index) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, y: 20 }}

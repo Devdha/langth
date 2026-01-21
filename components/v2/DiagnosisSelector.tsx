@@ -10,9 +10,9 @@ interface DiagnosisSelectorProps {
 }
 
 const DIAGNOSES = [
-  { id: 'SSD' as const, label: '말소리장애', desc: 'Speech Sound Disorder', color: 'bg-purple-500' },
-  { id: 'ASD' as const, label: '자폐스펙트럼', desc: 'Autism Spectrum', color: 'bg-indigo-500' },
-  { id: 'LD' as const, label: '언어발달지연', desc: 'Language Delay', color: 'bg-pink-500' },
+  { id: 'SSD' as const, label: '말소리장애', desc: 'Speech Sound Disorder', bgColor: 'bg-purple-500', ringColor: 'ring-purple-500' },
+  { id: 'ASD' as const, label: '자폐스펙트럼', desc: 'Autism Spectrum', bgColor: 'bg-indigo-500', ringColor: 'ring-indigo-500' },
+  { id: 'LD' as const, label: '언어발달지연', desc: 'Language Delay', bgColor: 'bg-pink-500', ringColor: 'ring-pink-500' },
 ];
 
 const THERAPY_APPROACHES: Record<DiagnosisType, { id: TherapyApproach; label: string; desc: string }[]> = {
@@ -58,13 +58,13 @@ export default function DiagnosisSelector({
               onClick={() => handleDiagnosisChange(d.id)}
               className={`p-3 rounded-xl border-2 transition-all text-left relative overflow-hidden ${
                 diagnosis === d.id
-                  ? 'border-transparent ring-4 ring-opacity-50'
+                  ? `border-transparent ring-4 ring-opacity-50 ${d.ringColor}`
                   : 'border-gray-100 hover:border-gray-200 bg-white'
-              } ${diagnosis === d.id ? 'ring-' + d.color.replace('bg-', '') : ''}`}
+              }`}
             >
-              <div className={`absolute inset-0 opacity-10 ${d.color}`} />
+              <div className={`absolute inset-0 opacity-10 ${d.bgColor}`} />
               {diagnosis === d.id && (
-                <div className={`absolute inset-0 opacity-20 ${d.color}`} />
+                <div className={`absolute inset-0 opacity-20 ${d.bgColor}`} />
               )}
               <div className="relative">
                 <div className="font-bold text-gray-800 text-sm">{d.label}</div>

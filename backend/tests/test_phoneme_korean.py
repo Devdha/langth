@@ -34,8 +34,9 @@ class TestHasPhonemeAtPosition:
         assert has_phoneme_at_position("가", "ㅇ", "coda") is False
 
     def test_nucleus_match(self):
+        """중성(모음) 위치 매칭 테스트"""
         assert has_phoneme_at_position("사과", "ㅏ", "nucleus") is True
-        assert has_phoneme_at_position("수박", "ㅏ", "nucleus") is False
+        assert has_phoneme_at_position("수북", "ㅏ", "nucleus") is False  # ㅜ, ㅗ만 있음
 
     def test_any_position(self):
         assert has_phoneme_at_position("라면", "ㄹ", "any") is True

@@ -1,0 +1,202 @@
+"""Pydantic schemas for the v2 API.
+
+This module defines all request and response models for the therapy sentence
+generation API v2.
+"""
+
+from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class Language(str, Enum):
+    """Supported languages for therapy sentence generation."""
+
+    KO = "ko"
+    EN = "en"
+
+
+class DiagnosisType(str, Enum):
+    """Types of diagnoses supported by the therapy system."""
+
+    SSD = "SSD"  # Speech Sound Disorder
+    ASD = "ASD"  # Autism Spectrum Disorder
+    LD = "LD"  # Language Delay
+
+
+class TherapyApproach(str, Enum):
+    """Therapy approaches for sentence generation."""
+
+    MINIMAL_PAIRS = "minimal_pairs"
+    MAXIMAL_OPPOSITIONS = "maximal_oppositions"
+    COMPLEXITY = "complexity"
+    CORE_VOCABULARY = "core_vocabulary"
+
+
+class CommunicativeFunction(str, Enum):
+    """Communicative functions for therapy sentences."""
+
+    REQUEST = "request"
+    REJECT = "reject"
+    HELP = "help"
+    CHOICE = "choice"
+    ATTENTION = "attention"
+    QUESTION = "question"
+
+
+class PhonemePosition(str, Enum):
+    """Positions where a phoneme can occur in a syllable."""
+
+    ONSET = "onset"
+    NUCLEUS = "nucleus"
+    CODA = "coda"
+    ANY = "any"
+
+
+class TargetConfig(BaseModel):
+    """Configuration for target phoneme in therapy sentences.
+
+    Attributes:
+        phoneme: The target phoneme to practice (1-3 characters).
+        position: The position of the phoneme in the syllable.
+        minOccurrences: Minimum number of times the phoneme should appear.
+    """
+
+    phoneme: str = Field(..., min_length=1, max_length=3)
+    position: PhonemePosition
+    minOccurrences: int = Field(default=1, ge=1, le=3)
+
+
+class GenerateRequestV2(BaseModel):
+    """Request model for generating therapy sentences.
+
+    Attributes:
+        language: The language for sentence generation (ko or en).
+        age: Target age group (3-7 years).
+        count: Number of sentences to generate (1-20).
+        target: Configuration for the target phoneme.
+        sentenceLength: Number of words in each sentence (2-6).
+        diagnosis: The diagnosis type for therapy customization.
+        therapyApproach: The therapy approach to use.
+        theme: Optional theme for sentence content.
+        communicativeFunction: Optional communicative function to target.
+    """
+
+    language: Language
+    age: Literal[3, 4, 5, 6, 7]
+    count: int = Field(..., ge=1, le=20)
+    target: TargetConfig
+    sentenceLength: int = Field(..., ge=2, le=6)
+    diagnosis: DiagnosisType
+    therapyApproach: TherapyApproach
+    theme: str | None = None
+    communicativeFunction: CommunicativeFunction | None = None
+
+
+class MatchedWord(BaseModel):
+    """A word that matches the target phoneme criteria.
+
+    Attributes:
+        word: The matched word.
+        startIndex: Starting character index in the sentence.
+        endIndex: Ending character index in the sentence.
+        positions: List of positions where the phoneme occurs.
+    """
+
+    word: str
+    startIndex: int
+    endIndex: int
+    positions: list[PhonemePosition]
+
+
+class TherapyItemV2(BaseModel):
+    """A generated therapy sentence with metadata.
+
+    Attributes:
+        id: Unique identifier for the sentence.
+        text: The generated sentence text.
+        target: The target phoneme configuration used.
+        matchedWords: Words in the sentence that contain the target phoneme.
+        wordCount: Number of words in the sentence.
+        score: Quality score for the sentence.
+        diagnosis: The diagnosis type used for generation.
+        approach: The therapy approach used.
+        theme: Optional theme used for generation.
+        function: Optional communicative function targeted.
+    """
+
+    id: str
+    text: str
+    target: TargetConfig
+    matchedWords: list[MatchedWord]
+    wordCount: int
+    score: float
+    diagnosis: DiagnosisType
+    approach: TherapyApproach
+    theme: str | None = None
+    function: CommunicativeFunction | None = None
+
+
+class GenerateMetaV2(BaseModel):
+    """Metadata about the generation response.
+
+    Attributes:
+        requestedCount: Number of sentences requested.
+        generatedCount: Number of sentences actually generated.
+        averageScore: Average quality score of generated sentences.
+        processingTimeMs: Processing time in milliseconds.
+    """
+
+    requestedCount: int
+    generatedCount: int
+    averageScore: float
+    processingTimeMs: int
+
+
+class GenerateResponseV2(BaseModel):
+    """Successful response model for sentence generation.
+
+    Attributes:
+        success: Always True for successful responses.
+        data: Dictionary containing items and meta.
+    """
+
+    success: Literal[True]
+    data: dict  # items + meta
+
+
+class ErrorCode(str, Enum):
+    """Error codes for API error responses."""
+
+    INVALID_REQUEST = "INVALID_REQUEST"
+    GENERATION_FAILED = "GENERATION_FAILED"
+    INSUFFICIENT_RESULTS = "INSUFFICIENT_RESULTS"
+    RATE_LIMITED = "RATE_LIMITED"
+    SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+
+
+class ErrorDetail(BaseModel):
+    """Detailed error information.
+
+    Attributes:
+        code: The error code.
+        message: Human-readable error message.
+        details: Optional additional details about the error.
+    """
+
+    code: ErrorCode
+    message: str
+    details: str | None = None
+
+
+class ErrorResponseV2(BaseModel):
+    """Error response model for API errors.
+
+    Attributes:
+        success: Always False for error responses.
+        error: Detailed error information.
+    """
+
+    success: Literal[False]
+    error: ErrorDetail

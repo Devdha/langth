@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass
 
-from app.api.v2.schemas import GenerateRequestV2, Language, PhonemePosition
+from app.api.v2.schemas import GenerateRequestV2, Language, PhonemePosition, TherapyApproach
 from app.services.phoneme.korean import find_phoneme_matches
 from app.services.phoneme.english import find_phoneme_matches_en
 
@@ -90,6 +90,15 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
         )
 
     # 2. 음소 검사
+    # core_vocabulary(ASD)는 기능적 의사소통이 목표이므로 음소 검증 스킵
+    if request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
+        return ValidationResult(
+            sentence=sentence,
+            passed=True,
+            matched_words=[],
+            word_count=word_count,
+        )
+
     if request.target.phoneme:
         if request.language == Language.KO:
             match_result = find_phoneme_matches(

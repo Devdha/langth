@@ -95,13 +95,8 @@ async def generate_candidates(
 
     client = _get_client()
 
-    # GPT-5.2 Responses API
-    # core_vocabulary는 복잡한 조건이 많으므로 medium effort 사용
-    from app.api.v2.schemas import TherapyApproach
-
+    # GPT-5.2 Responses API - low effort for speed
     reasoning_effort = "low"
-    if request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
-        reasoning_effort = "medium"
 
     logger.info(
         f"[LLM] 호출 시작 - model=gpt-5.2, effort={reasoning_effort}, "

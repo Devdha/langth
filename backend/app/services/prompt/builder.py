@@ -616,155 +616,64 @@ def _build_core_vocab_prompt(
     core_words_str = ", ".join(f'"{w}"' for w in core_words)
 
     if lang == "ko":
-        return f"""당신은 아동 언어치료사를 돕는 전문 문장 생성 AI입니다.
-핵심 어휘(AAC/ASD) 치료를 위한 문장 {batch_size}개를 생성해주세요.
+        return f"""아동 언어치료용 문장 {batch_size}개를 생성하세요.
 
-## ⚠️ 가장 중요한 규칙 ⚠️
+## 핵심 규칙
 
-**모든 문장에 아래 핵심 어휘 중 하나가 반드시 포함되어야 합니다!**
-핵심 어휘 없는 문장은 무효입니다.
+1. **핵심 어휘 필수**: 모든 문장에 아래 단어 중 하나 포함
+   {core_words_str}
 
-### 핵심 어휘 목록 (필수 선택!)
-{core_words_str}
+2. **토큰 수**: 정확히 {request.sentenceLength}개
 
-## 생성 조건
+3. **자연스러운 문장**: 아이가 실제로 말할 법한 표현
 
-### 기본 정보
-- 언어: 한국어
-- 대상 아동 연령: {request.age}세
+## 대상
+- {request.age}세 아동
 - {ctx['age_guideline']}
+{ctx['theme_section']}{ctx['function_section']}
 
-### 문장 구조
-- **tokens 배열의 길이: 정확히 {request.sentenceLength}개**
-- 서버가 tokens를 join하여 문장을 만듭니다
-- 목표 음소: '{request.target.phoneme}' (가능하면 포함, 핵심 어휘가 우선)
-- 음소 위치: {ctx['position_desc']}
+## 좋은 예시
+- ["엄마", "물", "줘"] (줘 포함)
+- ["까까", "더", "줘"] (더 포함)
+- ["또", "하고", "싶어"] (또 포함)
+- ["이거", "싫어"] (싫어 포함)
 
-### 치료 정보
-- 진단명: {request.diagnosis.value}
-- 치료 접근법: 핵심 어휘 접근법{ctx['theme_section']}{ctx['function_section']}
+## 나쁜 예시 (금지)
+- ["아니", "응가", "아니"] - 의미 없음
+- ["멍멍", "야옹", "삐약"] - 의성어만 나열
+- ["고양이가", "밥", "먹어요"] - 핵심 어휘 없음
 
-## 우선순위 (반드시 지킬 것!)
-
-1. **핵심 어휘 포함** (최우선!) - 문장에 핵심 어휘가 없으면 실패
-2. **자연스러운 문장** - 실제로 아이가 말할 법한 자연스러운 문장
-3. **토큰 수 정확성** - tokens 배열이 정확히 {request.sentenceLength}개
-4. **목표 음소** - 가능하면 목표 음소 '{request.target.phoneme}' 포함
-
-## ⚠️ 문장 품질 요구사항 ⚠️
-
-- 문장은 **실제 일상에서 사용하는 자연스러운 표현**이어야 합니다
-- 문법적으로 올바르고 의미가 통해야 합니다
-- 언어치료에서 실제로 연습할 가치가 있는 문장이어야 합니다
-- **의성어만 나열하거나 단어를 무작위로 조합하지 마세요**
-
-## 좋은 예시 (자연스럽고 핵심 어휘 포함)
-
-- "줘" 포함: ["엄마", "물", "줘"] → "엄마 물 줘" ✅
-- "더" 포함: ["까까", "더", "줘"] → "까까 더 줘" ✅
-- "또" 포함: ["또", "놀고", "싶어"] → "또 놀고 싶어" ✅
-- "싫어" 포함: ["이거", "안", "싫어"] → "이거 안 싫어" ✅
-- "뭐" 포함: ["이거", "뭐야?"] → "이거 뭐야?" ✅
-- "아니" 포함: ["아니", "이거", "아니야"] → "아니 이거 아니야" ✅
-
-## 나쁜 예시 (생성 금지!)
-
-- ❌ ["아니", "응가", "아니"] - 의미 없는 단어 조합!
-- ❌ ["응가", "나", "싫어"] - 어색한 문장!
-- ❌ ["멍멍", "쿵쿵", "야옹"] - 의성어만 나열!
-- ❌ ["고양이가", "밥을", "먹어요"] - 핵심 어휘 없음!
-- ❌ ["또", "또", "또"] - 같은 단어 반복!
-
-## 출력 형식
-
-반드시 다음 JSON 형식으로만 출력하세요:
-```json
-{{"items": [
-  {{
-    "core_word": "줘",
-    "tokens": ["엄마", "물", "줘"]
-  }},
-  {{
-    "core_word": "더",
-    "tokens": ["까까", "더", "줘"]
-  }},
-  {{
-    "core_word": "또",
-    "tokens": ["또", "하고", "싶어"]
-  }}
-]}}
-```
-
-{batch_size}개 문장을 생성해주세요.
-- 모든 문장에 핵심 어휘가 포함되어야 합니다
-- 모든 문장이 자연스럽고 의미가 통해야 합니다
-JSON 출력만 허용됩니다."""
+## 출력 형식 (JSON만)
+{{"items": [{{"core_word": "줘", "tokens": ["엄마", "물", "줘"]}}]}}"""
 
     else:
-        return f"""You are a specialized AI assistant helping speech-language pathologists.
-Please generate {batch_size} sentences for core vocabulary (AAC/ASD) therapy.
+        return f"""Generate {batch_size} therapy sentences for children.
 
-## ⚠️ MOST IMPORTANT RULE ⚠️
+## Core Rules
 
-**Every sentence MUST include one of the core words below!**
-Sentences without a core word are invalid.
+1. **Core word required**: Every sentence must include one of:
+   {core_words_str}
 
-### Core Vocabulary List (REQUIRED!)
-{core_words_str}
+2. **Token count**: Exactly {request.sentenceLength} tokens
 
-## Generation Requirements
+3. **Natural sentences**: What a child would actually say
 
-### Basic Information
-- Language: English
-- Target child age: {request.age} years old
+## Target
+- {request.age} year old child
 - {ctx['age_guideline']}
+{ctx['theme_section']}{ctx['function_section']}
 
-### Sentence Structure
-- **The tokens array must have exactly {request.sentenceLength} elements**
-- The server joins tokens to create the sentence
-- Target phoneme: '{request.target.phoneme}' (include if possible, but core word takes priority)
-- Phoneme position: {ctx['position_desc']}
+## Good examples
+- ["I", "want", "more"] (want included)
+- ["Please", "help", "me"] (help included)
+- ["No", "thank", "you"] (no included)
 
-### Therapy Information
-- Diagnosis: {request.diagnosis.value}
-- Therapy approach: core vocabulary approach{ctx['theme_section']}{ctx['function_section']}
+## Bad examples (forbidden)
+- ["The", "cat", "runs"] - no core word
+- ["Birds", "fly", "high"] - no core word
 
-## Priority Order (MUST FOLLOW!)
-
-1. **Core word inclusion** (TOP PRIORITY!) - No core word = failure
-2. **Token count accuracy** - tokens array must have exactly {request.sentenceLength} elements
-3. **Target phoneme** - Include '{request.target.phoneme}' if possible
-4. **Child appropriateness** - Positive and safe content only
-
-## Correct Examples (core word included)
-
-- "want" included: ["I", "want", "more"] → "I want more"
-- "help" included: ["Please", "help", "me"] → "Please help me"
-- "go" included: ["Let's", "go", "play"] → "Let's go play"
-- "no" included: ["No", "thank", "you"] → "No thank you"
-
-## Wrong Examples (no core word - DO NOT GENERATE!)
-
-- ❌ ["The", "cat", "runs"] - No core word!
-- ❌ ["Birds", "fly", "high"] - No core word!
-
-## Output Format
-
-Output MUST be in the following JSON format only:
-```json
-{{"items": [
-  {{
-    "core_word": "want",
-    "tokens": ["I", "want", "more"]
-  }},
-  {{
-    "core_word": "help",
-    "tokens": ["Please", "help", "me"]
-  }}
-]}}
-```
-
-Generate {batch_size} sentences. Every sentence must contain a core word. JSON output only."""
+## Output format (JSON only)
+{{"items": [{{"core_word": "want", "tokens": ["I", "want", "more"]}}]}}"""
 
 
 def _generate_word_count_examples(word_count: int) -> str:

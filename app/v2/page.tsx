@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
 import SentenceListV2 from "@/components/v2/SentenceListV2";
+import Roulette from "@/components/Roulette";
 import SessionSidebar from "@/components/v2/SessionSidebar";
 import SessionHeader from "@/components/v2/SessionHeader";
 import NewSessionModal from "@/components/v2/NewSessionModal";
 import EmptyState from "@/components/v2/EmptyState";
 import { useGenerateV2 } from "@/hooks/useGenerateV2";
+import { GameMode } from "@/types";
 import {
   GameSettingsV2,
   TherapyItemV2,
@@ -47,6 +49,7 @@ export default function V2Page() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // UI state
+  const [currentMode, setCurrentMode] = useState<GameMode>("list");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -242,8 +245,8 @@ export default function V2Page() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50/30 flex flex-col">
       <Header
-        currentMode="list"
-        onModeChange={() => {}}
+        currentMode={currentMode}
+        onModeChange={setCurrentMode}
         onNewGame={() => currentSession && setIsSettingsOpen(true)}
         isV2={true}
       />
@@ -422,12 +425,16 @@ export default function V2Page() {
                             </button>
                           </div>
                         </div>
-                        <SentenceListV2
-                          items={currentSession.items}
-                          onDelete={handleDelete}
-                          onEdit={handleEdit}
-                          onPlay={handlePlay}
-                        />
+                        {currentMode === "list" ? (
+                          <SentenceListV2
+                            items={currentSession.items}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            onPlay={handlePlay}
+                          />
+                        ) : currentMode === "roulette" ? (
+                          <Roulette items={currentSession.items} />
+                        ) : null}
                       </motion.div>
                     )}
                   </AnimatePresence>

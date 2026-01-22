@@ -112,12 +112,18 @@ async def run_pipeline(
             # 실패 이유 로깅
             fail_reasons = {}
             for r in results:
-                if not r["passed"] and r.get("fail_reason"):
-                    reason = r["fail_reason"]
-                    fail_reasons[reason] = fail_reasons.get(reason, 0) + 1
+                if not r.passed and r.fail_reason:
+                    # 실패 이유에서 핵심 키워드 추출
+                    if "word_count" in r.fail_reason:
+                        key = "word_count"
+                    elif "phoneme" in r.fail_reason:
+                        key = "no_phoneme"
+                    else:
+                        key = "other"
+                    fail_reasons[key] = fail_reasons.get(key, 0) + 1
             logger.warning(
                 f"[Validate] {len(passed)}/{len(safe_candidates)} 통과, "
-                f"실패 사유: {fail_reasons}, {val_time}ms"
+                f"실패: {fail_reasons}, {val_time}ms"
             )
         else:
             logger.info(f"[Validate] {len(passed)}/{len(safe_candidates)} 통과, {val_time}ms")

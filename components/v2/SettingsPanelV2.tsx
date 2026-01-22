@@ -131,22 +131,50 @@ export default function SettingsPanelV2({
                   />
                 </section>
 
-                {/* Section 2: Target Phoneme */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">2</span>
-                    목표 음소
-                  </h3>
-                  <PhonemeSelector
-                    language={language}
-                    phoneme={phoneme}
-                    position={position}
-                    minOccurrences={minOccurrences}
-                    onPhonemeChange={setPhoneme}
-                    onPositionChange={setPosition}
-                    onMinOccurrencesChange={setMinOccurrences}
-                  />
-                </section>
+                {/* Section 2: Target Phoneme OR Core Vocabulary Info */}
+                {therapyApproach === 'core_vocabulary' ? (
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">2</span>
+                      핵심 어휘
+                    </h3>
+                    <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-100">
+                      <p className="text-gray-700 mb-4">
+                        <span className="font-bold text-pink-600">핵심어휘 접근법</span>은 기능적 의사소통에 집중합니다.
+                        음소 목표 대신 아래 핵심 단어들을 자연스럽게 사용하는 문장을 생성합니다.
+                      </p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {(language === 'ko'
+                          ? ['더', '또', '아니', '네', '싫어', '줘', '이거', '저거', '뭐', '어디']
+                          : ['more', 'want', 'no', 'yes', 'help', 'go', 'stop', 'my', 'that', 'what']
+                        ).map((word) => (
+                          <span
+                            key={word}
+                            className="px-4 py-2 bg-white rounded-full text-pink-600 font-bold shadow-sm border border-pink-200"
+                          >
+                            {word}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ) : (
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">2</span>
+                      목표 음소
+                    </h3>
+                    <PhonemeSelector
+                      language={language}
+                      phoneme={phoneme}
+                      position={position}
+                      minOccurrences={minOccurrences}
+                      onPhonemeChange={setPhoneme}
+                      onPositionChange={setPosition}
+                      onMinOccurrencesChange={setMinOccurrences}
+                    />
+                  </section>
+                )}
 
                 {/* Section 3: Sentence Length */}
                 <section>

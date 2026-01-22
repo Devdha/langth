@@ -54,6 +54,28 @@ class PhonemePosition(str, Enum):
     ANY = "any"
 
 
+class DifficultyLevel(str, Enum):
+    """Difficulty levels for therapy sentences."""
+
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
+class PhonologicalRulesMode(str, Enum):
+    """Modes for handling phonological rules in sentence generation.
+
+    Attributes:
+        AVOID: Avoid sentences that trigger phonological rules.
+        ALLOW: Allow sentences with phonological rules naturally.
+        TRAIN: Specifically target sentences for phonological rule training.
+    """
+
+    AVOID = "avoid"
+    ALLOW = "allow"
+    TRAIN = "train"
+
+
 class TargetConfig(BaseModel):
     """Configuration for target phoneme in therapy sentences.
 
@@ -81,6 +103,8 @@ class GenerateRequestV2(BaseModel):
         therapyApproach: The therapy approach to use.
         theme: Optional theme for sentence content.
         communicativeFunction: Optional communicative function to target.
+        core_words: Optional list of core vocabulary words to include.
+        phonological_rules_mode: Optional mode for handling phonological rules.
     """
 
     language: Language
@@ -92,6 +116,8 @@ class GenerateRequestV2(BaseModel):
     therapyApproach: TherapyApproach
     theme: str | None = None
     communicativeFunction: CommunicativeFunction | None = None
+    core_words: list[str] | None = None
+    phonological_rules_mode: PhonologicalRulesMode | None = None
 
 
 class MatchedWord(BaseModel):
@@ -200,3 +226,39 @@ class ErrorResponseV2(BaseModel):
 
     success: Literal[False]
     error: ErrorDetail
+
+
+class TokenizedSentence(BaseModel):
+    """A sentence with tokenization information.
+
+    Attributes:
+        text: The original sentence text.
+        tokens: List of tokens (words/morphemes) in the sentence.
+    """
+
+    text: str
+    tokens: list[str]
+
+
+class ContrastSet(BaseModel):
+    """A pair of sentences for contrast-based therapy.
+
+    Attributes:
+        target_sentence: The sentence with the target phoneme.
+        contrast_sentence: The sentence with the contrasting phoneme.
+    """
+
+    target_sentence: str
+    contrast_sentence: str
+
+
+class ScriptFadingResult(BaseModel):
+    """Result of script fading for therapy progression.
+
+    Attributes:
+        full_script: The complete sentence/script.
+        fade_steps: Progressive fading steps from full to minimal cues.
+    """
+
+    full_script: str
+    fade_steps: list[str]

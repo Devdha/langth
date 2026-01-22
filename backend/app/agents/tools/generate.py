@@ -104,10 +104,27 @@ async def generate_candidates(
 
     try:
         data = json.loads(content)
-        sentences = data.get("sentences", [])
-        if isinstance(sentences, list):
-            return [_normalize_sentence(s) for s in sentences if isinstance(s, str)]
-        return []
+        sentences = []
+
+        # 새로운 tokens 기반 형식: {"items": [...]}
+        if "items" in data:
+            for item in data["items"]:
+                if "tokens" in item and isinstance(item["tokens"], list):
+                    sentences.append(" ".join(item["tokens"]))
+        # contrast 모드용 tokens 기반 형식: {"sets": [...]}
+        elif "sets" in data:
+            for s in data["sets"]:
+                if "target_sentence" in s and "tokens" in s["target_sentence"]:
+                    sentences.append(" ".join(s["target_sentence"]["tokens"]))
+                if "contrast_sentence" in s and "tokens" in s["contrast_sentence"]:
+                    sentences.append(" ".join(s["contrast_sentence"]["tokens"]))
+        # 기존 형식 하위 호환: {"sentences": [...]}
+        elif "sentences" in data:
+            raw_sentences = data.get("sentences", [])
+            if isinstance(raw_sentences, list):
+                sentences = [s for s in raw_sentences if isinstance(s, str)]
+
+        return [_normalize_sentence(s) for s in sentences if isinstance(s, str)]
     except json.JSONDecodeError:
         # Fallback: try to extract quoted strings
         matches = re.findall(r'"([^"]+)"', content)

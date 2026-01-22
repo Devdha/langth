@@ -5,6 +5,12 @@ export type TherapyApproach = 'minimal_pairs' | 'maximal_oppositions' | 'complex
 export type CommunicativeFunction = 'request' | 'reject' | 'help' | 'choice' | 'attention' | 'question';
 export type PhonemePosition = 'onset' | 'nucleus' | 'coda' | 'any';
 
+// Difficulty level for therapy items
+export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+
+// Phonological rules mode for SSD therapy
+export type PhonologicalRulesMode = 'avoid' | 'allow' | 'train';
+
 // Target configuration
 export interface TargetConfigV2 {
   phoneme: string;
@@ -32,6 +38,8 @@ export interface TherapyItemV2 {
   approach: TherapyApproach;
   theme?: string;
   function?: CommunicativeFunction;
+  difficulty?: DifficultyLevel;
+  tokens?: string[];  // Tokenized form of the sentence
 }
 
 // V2 generation request
@@ -81,10 +89,32 @@ export interface GameSettingsV2 {
   therapyApproach: TherapyApproach;
   theme: string;
   communicativeFunction: CommunicativeFunction | null;
+  coreWords?: string[];  // For core_vocabulary approach
+  phonologicalRulesMode?: PhonologicalRulesMode;
 }
 
 // Session color options
 export type SessionColor = 'purple' | 'pink' | 'blue' | 'green' | 'orange' | 'red';
+
+// Tokenized sentence for contrast sets
+export interface TokenizedSentence {
+  text: string;
+  tokens: string[];
+}
+
+// Contrast set for minimal_pairs/maximal_oppositions approaches
+export interface ContrastSet {
+  targetWord: string;
+  contrastWord: string;
+  targetSentence: TokenizedSentence;
+  contrastSentence: TokenizedSentence;
+}
+
+// Script fading result for ASD script approach
+export interface ScriptFadingResult {
+  fullScript: string;
+  fadeSteps: string[];
+}
 
 // Therapy session for IndexedDB storage
 export interface TherapySession {

@@ -152,8 +152,10 @@ class TestBuildGenerationPrompt:
         )
         prompt = build_generation_prompt(request, batch_size=30)
 
-        assert "sentences" in prompt.lower()
+        # New format uses "sets" for minimal_pairs/maximal_oppositions, "items" for others
+        assert "sets" in prompt.lower() or "items" in prompt.lower()
         assert "json" in prompt.lower()
+        assert "tokens" in prompt.lower()  # All formats now use tokens array
 
     def test_english_prompt_with_all_options(self):
         """모든 옵션이 포함된 영어 프롬프트 테스트."""

@@ -39,6 +39,33 @@ def asd_request():
     )
 
 
+@pytest.fixture
+def english_request():
+    return GenerateRequestV2(
+        language=Language.EN,
+        age=5,
+        count=10,
+        target=TargetConfig(phoneme="r", position=PhonemePosition.ONSET, minOccurrences=1),
+        sentenceLength=4,
+        diagnosis=DiagnosisType.SSD,
+        therapyApproach=TherapyApproach.MINIMAL_PAIRS,
+        theme="daily",
+    )
+
+
+@pytest.fixture
+def english_core_vocab_request():
+    return GenerateRequestV2(
+        language=Language.EN,
+        age=5,
+        count=10,
+        target=None,
+        sentenceLength=4,
+        diagnosis=DiagnosisType.ASD,
+        therapyApproach=TherapyApproach.CORE_VOCABULARY,
+    )
+
+
 class TestScoreSentences:
     def test_returns_scored_sentences(self, korean_request):
         """점수가 부여된 문장 반환"""
@@ -86,3 +113,27 @@ class TestScoreSentences:
         # 내림차순 정렬 확인
         for i in range(len(results) - 1):
             assert results[i].score >= results[i + 1].score
+
+    def test_en_scores_use_available_weights(self, english_request):
+        """EN은 빈도/기능 제외 후 가중치 재정규화"""
+        validated = [
+            {"sentence": "Rory reads red books", "matched_words": ["Rory", "reads"], "word_count": 4},
+        ]
+        results = score_sentences(validated, english_request)
+
+        match_bonus = 60.0  # 2 * 30
+        length_fit = 100.0
+        expected = round(
+            (match_bonus * (0.2 / 0.3)) + (length_fit * (0.1 / 0.3)),
+            2,
+        )
+        assert results[0].score == expected
+
+    def test_en_core_vocab_scores_use_length_only(self, english_core_vocab_request):
+        """EN core_vocabulary는 length_fit만 반영"""
+        validated = [
+            {"sentence": "Please help me now", "matched_words": [], "word_count": 4},
+        ]
+        results = score_sentences(validated, english_core_vocab_request)
+
+        assert results[0].score == 100.0

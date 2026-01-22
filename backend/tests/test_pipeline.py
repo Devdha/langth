@@ -10,6 +10,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from app.agents.pipeline import run_pipeline
+from app.agents.tools.generate import GenerateCandidatesResult
 from app.api.v2.schemas import (
     GenerateRequestV2,
     TargetConfig,
@@ -41,14 +42,16 @@ class TestRunPipeline:
     @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_returns_items(self, mock_generate, gen_request):
         """파이프라인이 아이템 반환."""
-        mock_generate.return_value = [
-            "라면이 너무 맛있어요",
-            "라볶이를 먹고 싶어요",
-            "달리기가 재미있어요",
-            "물을 마시고 싶어요",
-            "길을 걸어가고 있어요",
-            "라면을 끓이고 있어요",
-        ]
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[
+                {"sentence": "라면이 너무 맛있어요"},
+                {"sentence": "라볶이를 먹고 싶어요"},
+                {"sentence": "달리기가 재미있어요"},
+                {"sentence": "물을 마시고 싶어요"},
+                {"sentence": "길을 걸어가고 있어요"},
+                {"sentence": "라면을 끓이고 있어요"},
+            ]
+        )
 
         result = await run_pipeline(gen_request)
 
@@ -60,9 +63,11 @@ class TestRunPipeline:
     @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_handles_insufficient(self, mock_generate, gen_request):
         """부족한 결과 처리."""
-        mock_generate.return_value = [
-            "사과가 맛있어요",  # ㄹ 없음, 3어절
-        ]
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[
+                {"sentence": "사과가 맛있어요"},  # ㄹ 없음, 3어절
+            ]
+        )
 
         result = await run_pipeline(gen_request)
 
@@ -76,9 +81,20 @@ class TestRunPipeline:
         """부족 시 재시도."""
         # 첫 호출: 부족, 두 번째 호출: 충분, 세 번째 호출: 추가 (max_attempts=3)
         mock_generate.side_effect = [
-            ["사과가 맛있어요"],  # ㄹ 없음, 4어절 아님
-            ["라면이 너무 맛있어요", "달리기가 재미있어요"],
-            ["라볶이를 먹고 싶어요", "물을 마시고 싶어요", "길을 걸어가고 있어요"],
+            GenerateCandidatesResult(candidates=[{"sentence": "사과가 맛있어요"}]),
+            GenerateCandidatesResult(
+                candidates=[
+                    {"sentence": "라면이 너무 맛있어요"},
+                    {"sentence": "달리기가 재미있어요"},
+                ]
+            ),
+            GenerateCandidatesResult(
+                candidates=[
+                    {"sentence": "라볶이를 먹고 싶어요"},
+                    {"sentence": "물을 마시고 싶어요"},
+                    {"sentence": "길을 걸어가고 있어요"},
+                ]
+            ),
         ]
 
         result = await run_pipeline(gen_request)
@@ -90,9 +106,11 @@ class TestRunPipeline:
     @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_returns_therapy_items(self, mock_generate, gen_request):
         """TherapyItemV2 형식으로 반환."""
-        mock_generate.return_value = [
-            "라면이 너무 맛있어요",
-        ]
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[
+                {"sentence": "라면이 너무 맛있어요"},
+            ]
+        )
 
         result = await run_pipeline(gen_request)
 
@@ -106,9 +124,26 @@ class TestRunPipeline:
 
     @pytest.mark.asyncio
     @patch("app.agents.pipeline.generate_candidates")
+    async def test_pipeline_preserves_difficulty(self, mock_generate, gen_request):
+        """난이도 메타데이터 보존."""
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[
+                {"sentence": "라면이 너무 맛있어요", "difficulty": "easy"},
+            ]
+        )
+
+        result = await run_pipeline(gen_request)
+
+        if result.items:
+            assert result.items[0].difficulty == "easy"
+
+    @pytest.mark.asyncio
+    @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_meta_includes_processing_time(self, mock_generate, gen_request):
         """메타에 처리 시간 포함."""
-        mock_generate.return_value = ["라면이 너무 맛있어요"]
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[{"sentence": "라면이 너무 맛있어요"}]
+        )
 
         result = await run_pipeline(gen_request)
 
@@ -120,10 +155,12 @@ class TestRunPipeline:
     @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_meta_includes_average_score(self, mock_generate, gen_request):
         """메타에 평균 점수 포함."""
-        mock_generate.return_value = [
-            "라면이 너무 맛있어요",
-            "달리기가 재미있어요",
-        ]
+        mock_generate.return_value = GenerateCandidatesResult(
+            candidates=[
+                {"sentence": "라면이 너무 맛있어요"},
+                {"sentence": "달리기가 재미있어요"},
+            ]
+        )
 
         result = await run_pipeline(gen_request)
 
@@ -135,7 +172,7 @@ class TestRunPipeline:
     @patch("app.agents.pipeline.generate_candidates")
     async def test_pipeline_empty_result(self, mock_generate, gen_request):
         """빈 결과 처리."""
-        mock_generate.return_value = []
+        mock_generate.return_value = GenerateCandidatesResult(candidates=[])
 
         result = await run_pipeline(gen_request)
 

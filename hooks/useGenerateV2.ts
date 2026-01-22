@@ -7,6 +7,7 @@ import {
   GenerateRequestV2,
   GenerateResponseV2,
   ErrorResponseV2,
+  ContrastSet,
 } from "@/types/v2";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765';
@@ -25,17 +26,19 @@ interface UseGenerateV2Result {
   loading: boolean;
   error: string | null;
   items: TherapyItemV2[];
+  contrastSets: ContrastSet[];
   warning: string | null;
   meta: GenerateMeta | null;
   clearWarning: () => void;
 }
 
 export function useGenerateV2(
-  onSuccess?: (items: TherapyItemV2[]) => void,
+  onSuccess?: (items: TherapyItemV2[], contrastSets: ContrastSet[]) => void,
 ): UseGenerateV2Result {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<TherapyItemV2[]>([]);
+  const [contrastSets, setContrastSets] = useState<ContrastSet[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
   const [meta, setMeta] = useState<GenerateMeta | null>(null);
 
@@ -84,6 +87,7 @@ export function useGenerateV2(
     setError(null);
     setWarning(null);
     setMeta(null);
+    setContrastSets([]);
 
     // Setup AbortController and timeout
     abortControllerRef.current = new AbortController();
@@ -125,8 +129,9 @@ export function useGenerateV2(
 
       if (res.ok && data.success) {
         const responseData = data.data;
-        setItems(responseData.items);
+        setItems(responseData.items || []);
         setMeta(responseData.meta);
+        setContrastSets(responseData.contrastSets || []);
 
         // Show warning if fewer items generated than requested
         if (responseData.meta.generatedCount < settings.count) {
@@ -137,16 +142,18 @@ export function useGenerateV2(
 
         // Call success callback if provided
         if (onSuccess) {
-          onSuccess(responseData.items);
+          onSuccess(responseData.items || [], responseData.contrastSets || []);
         }
       } else if (!data.success) {
         const errorMessage = data.error.message || '문장 생성에 실패했습니다. 다시 시도해주세요.';
         setError(errorMessage);
         setItems([]);
+        setContrastSets([]);
       } else {
         // Unexpected response format
         setError('서버 응답 형식이 올바르지 않습니다.');
         setItems([]);
+        setContrastSets([]);
       }
     } catch (err) {
       // Clear timeout on error
@@ -167,6 +174,7 @@ export function useGenerateV2(
         setError('서버 연결에 실패했습니다. 다시 시도해주세요.');
       }
       setItems([]);
+      setContrastSets([]);
       console.error("Failed to generate", err);
     } finally {
       setLoading(false);
@@ -180,6 +188,7 @@ export function useGenerateV2(
     loading,
     error,
     items,
+    contrastSets,
     warning,
     meta,
     clearWarning,

@@ -72,7 +72,7 @@ export default function SessionCard({
             e.stopPropagation();
             setShowMenu(!showMenu);
           }}
-          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all"
+          className="p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 hover:bg-gray-100 transition-all md:pointer-events-none md:group-hover:pointer-events-auto md:group-focus-within:pointer-events-auto"
         >
           <MoreVertical size={16} className="text-gray-400" />
         </button>

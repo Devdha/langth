@@ -28,6 +28,18 @@ const positionLabels = {
   any: "전체",
 };
 
+const difficultyLabels = {
+  easy: "쉬움",
+  medium: "보통",
+  hard: "어려움",
+};
+
+const difficultyColors = {
+  easy: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  medium: "bg-amber-100 text-amber-700 border-amber-200",
+  hard: "bg-rose-100 text-rose-700 border-rose-200",
+};
+
 export default function SentenceCardV2({
   item,
   index,
@@ -52,7 +64,7 @@ export default function SentenceCardV2({
       className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-primary/30 transition-all group relative"
     >
       {/* Action buttons - visible on hover */}
-      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
+      <div className="absolute top-4 right-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity flex gap-2 z-10 md:pointer-events-none md:group-hover:pointer-events-auto md:group-focus-within:pointer-events-auto">
         <button
           onClick={() => onPlay(item)}
           className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
@@ -96,6 +108,15 @@ export default function SentenceCardV2({
           ) : (
             <span className="bg-gradient-to-r from-pink-100 to-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold border border-purple-200">
               핵심어휘
+            </span>
+          )}
+          {item.difficulty && difficultyLabels[item.difficulty] && (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                difficultyColors[item.difficulty]
+              }`}
+            >
+              난이도 · {difficultyLabels[item.difficulty]}
             </span>
           )}
         </div>

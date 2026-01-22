@@ -36,6 +36,19 @@ def english_request():
     )
 
 
+@pytest.fixture
+def core_vocab_request():
+    return GenerateRequestV2(
+        language=Language.KO,
+        age=5,
+        count=5,
+        target=None,
+        sentenceLength=3,
+        diagnosis=DiagnosisType.ASD,
+        therapyApproach=TherapyApproach.CORE_VOCABULARY,
+    )
+
+
 class TestValidateSentences:
     def test_korean_valid_sentence(self, korean_request):
         """한국어 유효한 문장"""
@@ -91,3 +104,20 @@ class TestValidateSentences:
 
         passed = [r for r in results if r.passed]
         assert len(passed) == 2
+
+    def test_core_vocab_requires_core_word(self, core_vocab_request):
+        """핵심어휘 포함 여부 검사"""
+        sentences = ["고양이가 밥을 먹어요"]  # 3어절, core word 없음
+        results = validate_sentences(sentences, core_vocab_request)
+
+        assert len(results) == 1
+        assert results[0].passed is False
+        assert "core_vocabulary" in results[0].fail_reason
+
+    def test_core_vocab_with_core_word(self, core_vocab_request):
+        """핵심어휘 포함 문장 통과"""
+        sentences = ["이거 밥 줘"]  # 3어절, core word 포함
+        results = validate_sentences(sentences, core_vocab_request)
+
+        assert len(results) == 1
+        assert results[0].passed is True

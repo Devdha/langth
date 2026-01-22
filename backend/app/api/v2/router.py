@@ -50,6 +50,7 @@ async def generate_sentences(request: GenerateRequestV2):
             "success": True,
             "data": {
                 "items": [item.model_dump() for item in result.items],
+                "contrastSets": result.contrast_sets,
                 "meta": result.meta,
             },
         }

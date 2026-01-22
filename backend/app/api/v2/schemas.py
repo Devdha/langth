@@ -7,7 +7,7 @@ generation API v2.
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Language(str, Enum):
@@ -32,6 +32,17 @@ class TherapyApproach(str, Enum):
     MAXIMAL_OPPOSITIONS = "maximal_oppositions"
     COMPLEXITY = "complexity"
     CORE_VOCABULARY = "core_vocabulary"
+
+
+ALLOWED_APPROACHES_BY_DIAGNOSIS: dict["DiagnosisType", set["TherapyApproach"]] = {
+    DiagnosisType.SSD: {
+        TherapyApproach.MINIMAL_PAIRS,
+        TherapyApproach.MAXIMAL_OPPOSITIONS,
+        TherapyApproach.COMPLEXITY,
+    },
+    DiagnosisType.ASD: {TherapyApproach.CORE_VOCABULARY},
+    DiagnosisType.LD: {TherapyApproach.CORE_VOCABULARY},
+}
 
 
 class CommunicativeFunction(str, Enum):
@@ -119,6 +130,21 @@ class GenerateRequestV2(BaseModel):
     core_words: list[str] | None = None
     phonological_rules_mode: PhonologicalRulesMode | None = None
 
+    @model_validator(mode="after")
+    def _validate_approach_constraints(self) -> "GenerateRequestV2":
+        allowed = ALLOWED_APPROACHES_BY_DIAGNOSIS.get(self.diagnosis, set())
+        if allowed and self.therapyApproach not in allowed:
+            allowed_values = ", ".join(a.value for a in sorted(allowed, key=lambda a: a.value))
+            raise ValueError(
+                f"therapyApproach '{self.therapyApproach.value}' is not allowed for diagnosis "
+                f"'{self.diagnosis.value}'. Allowed: {allowed_values}"
+            )
+
+        if self.therapyApproach != TherapyApproach.CORE_VOCABULARY and self.target is None:
+            raise ValueError("target is required for non-core_vocabulary therapyApproach")
+
+        return self
+
 
 class MatchedWord(BaseModel):
     """A word that matches the target phoneme criteria.
@@ -146,6 +172,8 @@ class TherapyItemV2(BaseModel):
         matchedWords: Words in the sentence that contain the target phoneme.
         wordCount: Number of words in the sentence.
         score: Quality score for the sentence.
+        difficulty: Optional difficulty level for the sentence.
+        tokens: Optional tokenized sentence.
         diagnosis: The diagnosis type used for generation.
         approach: The therapy approach used.
         theme: Optional theme used for generation.
@@ -158,10 +186,40 @@ class TherapyItemV2(BaseModel):
     matchedWords: list[MatchedWord]
     wordCount: int
     score: float
+    difficulty: DifficultyLevel | None = None
+    tokens: list[str] | None = None
     diagnosis: DiagnosisType
     approach: TherapyApproach
     theme: str | None = None
     function: CommunicativeFunction | None = None
+
+
+class TokenizedSentence(BaseModel):
+    """A sentence with tokenization information.
+
+    Attributes:
+        text: The original sentence text.
+        tokens: List of tokens (words/morphemes) in the sentence.
+    """
+
+    text: str
+    tokens: list[str]
+
+
+class ContrastSet(BaseModel):
+    """A pair of sentences for contrast-based therapy.
+
+    Attributes:
+        targetWord: The word containing the target phoneme.
+        contrastWord: The word containing the contrasting phoneme.
+        targetSentence: The sentence with the target phoneme.
+        contrastSentence: The sentence with the contrasting phoneme.
+    """
+
+    targetWord: str
+    contrastWord: str
+    targetSentence: TokenizedSentence
+    contrastSentence: TokenizedSentence
 
 
 class GenerateMetaV2(BaseModel):
@@ -180,16 +238,30 @@ class GenerateMetaV2(BaseModel):
     processingTimeMs: int
 
 
+class GenerateDataV2(BaseModel):
+    """Data payload for generation responses.
+
+    Attributes:
+        items: Generated therapy items (for sentence-based approaches).
+        contrastSets: Generated contrast sets (for minimal_pairs/maximal_oppositions).
+        meta: Metadata about generation.
+    """
+
+    items: list[TherapyItemV2] | None = None
+    contrastSets: list[ContrastSet] | None = None
+    meta: GenerateMetaV2
+
+
 class GenerateResponseV2(BaseModel):
     """Successful response model for sentence generation.
 
     Attributes:
         success: Always True for successful responses.
-        data: Dictionary containing items and meta.
+        data: Dictionary containing items, contrastSets, and meta.
     """
 
     success: Literal[True]
-    data: dict  # items + meta
+    data: GenerateDataV2
 
 
 class ErrorCode(str, Enum):
@@ -226,30 +298,6 @@ class ErrorResponseV2(BaseModel):
 
     success: Literal[False]
     error: ErrorDetail
-
-
-class TokenizedSentence(BaseModel):
-    """A sentence with tokenization information.
-
-    Attributes:
-        text: The original sentence text.
-        tokens: List of tokens (words/morphemes) in the sentence.
-    """
-
-    text: str
-    tokens: list[str]
-
-
-class ContrastSet(BaseModel):
-    """A pair of sentences for contrast-based therapy.
-
-    Attributes:
-        target_sentence: The sentence with the target phoneme.
-        contrast_sentence: The sentence with the contrasting phoneme.
-    """
-
-    target_sentence: str
-    contrast_sentence: str
 
 
 class ScriptFadingResult(BaseModel):

@@ -141,6 +141,39 @@ class TestGenerateEndpointValidation:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
+    async def test_invalid_approach_for_diagnosis(self, client):
+        """Should return 422 when therapyApproach doesn't match diagnosis."""
+        response = await client.post(
+            "/api/v2/generate",
+            json={
+                "language": "ko",
+                "age": 5,
+                "count": 5,
+                "target": {"phoneme": "ㄹ", "position": "onset", "minOccurrences": 1},
+                "sentenceLength": 4,
+                "diagnosis": "ASD",
+                "therapyApproach": "minimal_pairs",
+            },
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_missing_target_for_non_core(self, client):
+        """Should return 422 when target is missing for non-core approach."""
+        response = await client.post(
+            "/api/v2/generate",
+            json={
+                "language": "ko",
+                "age": 5,
+                "count": 5,
+                "sentenceLength": 4,
+                "diagnosis": "SSD",
+                "therapyApproach": "minimal_pairs",
+            },
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
     async def test_valid_english_request(self, client):
         """Should accept valid English request."""
         response = await client.post(
@@ -169,7 +202,7 @@ class TestGenerateEndpointValidation:
                 "count": 10,
                 "target": {"phoneme": "ㅅ", "position": "coda", "minOccurrences": 1},
                 "sentenceLength": 5,
-                "diagnosis": "LD",
+                "diagnosis": "SSD",
                 "therapyApproach": "complexity",
                 "theme": "animals",
                 "communicativeFunction": "request",

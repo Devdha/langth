@@ -10,6 +10,7 @@ import SessionSidebar from "@/components/v2/SessionSidebar";
 import SessionHeader from "@/components/v2/SessionHeader";
 import NewSessionModal from "@/components/v2/NewSessionModal";
 import EmptyState from "@/components/v2/EmptyState";
+import EditModal from "@/components/EditModal";
 import { useGenerateV2 } from "@/hooks/useGenerateV2";
 import { GameMode } from "@/types";
 import {
@@ -17,6 +18,7 @@ import {
   TherapyItemV2,
   TherapySession,
   SessionColor,
+  ContrastSet,
 } from "@/types/v2";
 import {
   getAllSessions,
@@ -47,6 +49,7 @@ export default function V2Page() {
   const [sessions, setSessions] = useState<TherapySession[]>([]);
   const [currentSession, setCurrentSession] = useState<TherapySession | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editingItem, setEditingItem] = useState<TherapyItemV2 | null>(null);
 
   // UI state
   const [currentMode, setCurrentMode] = useState<GameMode>("list");
@@ -60,9 +63,9 @@ export default function V2Page() {
   );
 
   // Generate hook
-  const handleGenerateSuccess = useCallback((items: TherapyItemV2[]) => {
+  const handleGenerateSuccess = useCallback((items: TherapyItemV2[], contrastSets: ContrastSet[]) => {
     if (currentSession) {
-      setCurrentSession((prev) => (prev ? { ...prev, items } : null));
+      setCurrentSession((prev) => (prev ? { ...prev, items, contrastSets } : null));
       setHasUnsavedChanges(true);
     }
   }, [currentSession]);
@@ -107,6 +110,7 @@ export default function V2Page() {
     if (!currentSession) return;
     await updateSession(currentSession.id, {
       items: currentSession.items,
+      contrastSets: currentSession.contrastSets,
       settings: currentSession.settings,
       metadata: currentSession.metadata,
     });
@@ -203,6 +207,7 @@ export default function V2Page() {
     setCurrentSession((prev) =>
       prev ? { ...prev, settings: newSettings } : null
     );
+    setHasUnsavedChanges(true);
     await generate(newSettings);
   };
 
@@ -215,7 +220,31 @@ export default function V2Page() {
   };
 
   const handleEdit = (item: TherapyItemV2) => {
-    console.log("Edit not yet implemented", item);
+    setEditingItem(item);
+  };
+
+  const handleEditSave = (newText: string) => {
+    if (!editingItem) return;
+    const trimmedText = newText.trim();
+    const wordCount = trimmedText ? trimmedText.split(/\s+/).length : 0;
+    setCurrentSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((item) =>
+          item.id === editingItem.id
+            ? {
+                ...item,
+                text: trimmedText,
+                wordCount,
+                matchedWords: [],
+                score: 0,
+              }
+            : item
+        ),
+      };
+    });
+    setHasUnsavedChanges(true);
   };
 
   const handlePlay = (item: TherapyItemV2) => {
@@ -229,10 +258,17 @@ export default function V2Page() {
   const handleReset = () => {
     if (!currentSession) return;
     if (confirm("모든 문장을 삭제하시겠습니까?")) {
-      setCurrentSession((prev) => (prev ? { ...prev, items: [] } : null));
+      setCurrentSession((prev) => (prev ? { ...prev, items: [], contrastSets: [] } : null));
       setHasUnsavedChanges(true);
     }
   };
+
+  const showContrastSets =
+    currentSession?.settings.therapyApproach &&
+    (currentSession.settings.therapyApproach === "minimal_pairs" ||
+      currentSession.settings.therapyApproach === "maximal_oppositions") &&
+    currentSession.contrastSets &&
+    currentSession.contrastSets.length > 0;
 
   if (!isInitialized) {
     return (
@@ -405,9 +441,11 @@ export default function V2Page() {
                       >
                         <div className="flex justify-between items-center mb-6">
                           <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
-                            📋 생성된 문장
+                            📋 {showContrastSets ? "생성된 대조 세트" : "생성된 문장"}
                             <span className="text-sm font-normal text-gray-400 bg-white px-2 py-1 rounded-lg">
-                              {currentSession.items.length}개
+                              {showContrastSets
+                                ? currentSession.contrastSets?.length || 0
+                                : currentSession.items.length}개
                             </span>
                           </h2>
                           <div className="flex gap-2">
@@ -428,6 +466,9 @@ export default function V2Page() {
                         {currentMode === "list" ? (
                           <SentenceListV2
                             items={currentSession.items}
+                            contrastSets={currentSession.contrastSets}
+                            therapyApproach={currentSession.settings.therapyApproach}
+                            language={currentSession.settings.language}
                             onDelete={handleDelete}
                             onEdit={handleEdit}
                             onPlay={handlePlay}
@@ -465,6 +506,13 @@ export default function V2Page() {
           initialSettings={currentSession.settings}
         />
       )}
+
+      <EditModal
+        isOpen={!!editingItem}
+        initialText={editingItem?.text || ""}
+        onClose={() => setEditingItem(null)}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

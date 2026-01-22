@@ -20,7 +20,7 @@ from app.agents.tools import (
     score_sentences,
     diversify_results,
 )
-from app.agents.guardrails import filter_unsafe_sentences
+from app.agents.guardrails import filter_unsafe_sentences, is_safe_sentence
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +32,13 @@ class PipelineResult:
     Attributes:
         success: 성공 여부
         items: 생성된 치료 아이템들
+        contrast_sets: 생성된 대조 세트들 (선택)
         meta: 메타 정보 (requestedCount, generatedCount, averageScore, processingTimeMs)
     """
 
     success: bool
     items: list[TherapyItemV2]
+    contrast_sets: list[dict] | None
     meta: dict
 
 
@@ -65,6 +67,7 @@ async def run_pipeline(
     """
     start_time = time.time()
     all_validated: list[dict] = []
+    all_contrast_sets: list[dict] = []
 
     # target이 없을 수 있음 (core_vocabulary)
     target_info = f"phoneme={request.target.phoneme}, position={request.target.position}" if request.target else "no target"
@@ -84,7 +87,8 @@ async def run_pipeline(
 
         gen_start = time.time()
         try:
-            candidates = await generate_candidates(request, batch_size)
+            gen_result = await generate_candidates(request, batch_size)
+            candidates, contrast_sets = _normalize_generation_result(gen_result)
             gen_time = int((time.time() - gen_start) * 1000)
             logger.info(f"[Generate] 완료 - {len(candidates)}개 생성, {gen_time}ms")
         except Exception as e:
@@ -95,6 +99,7 @@ async def run_pipeline(
         # 가드레일: 안전하지 않은 문장 필터링
         guard_start = time.time()
         safe_candidates = filter_unsafe_sentences(candidates)
+        safe_contrast_sets = _filter_contrast_sets(contrast_sets)
         guard_time = int((time.time() - guard_start) * 1000)
         filtered_count = len(candidates) - len(safe_candidates)
         if filtered_count > 0:
@@ -130,6 +135,16 @@ async def run_pipeline(
             logger.info(f"[Validate] {len(passed)}/{len(safe_candidates)} 통과, {val_time}ms")
 
         all_validated.extend(passed)
+        if safe_contrast_sets:
+            passed_texts = {item["sentence"] for item in passed}
+            validated_sets = _validate_contrast_sets(
+                safe_contrast_sets,
+                request,
+                passed_texts,
+            )
+            all_contrast_sets.extend(validated_sets)
+            if len(all_contrast_sets) > request.count:
+                del all_contrast_sets[request.count:]
         logger.info(f"[Pipeline] 시도 {attempt+1} 완료: 누적 {len(all_validated)}개")
 
         # 충분하면 종료
@@ -161,6 +176,7 @@ async def run_pipeline(
     return PipelineResult(
         success=True,
         items=items,
+        contrast_sets=all_contrast_sets or None,
         meta={
             "requestedCount": request.count,
             "generatedCount": len(items),
@@ -205,8 +221,82 @@ def _to_therapy_item(scored, request: GenerateRequestV2) -> TherapyItemV2:
         matchedWords=matched_words,
         wordCount=scored.word_count,
         score=scored.score,
+        difficulty=scored.difficulty,
         diagnosis=request.diagnosis,
         approach=request.therapyApproach,
         theme=request.theme,
         function=request.communicativeFunction,
     )
+
+
+def _normalize_generation_result(result) -> tuple[list[dict] | list[str], list[dict]]:
+    if isinstance(result, list):
+        return result, []
+
+    candidates = result.candidates if hasattr(result, "candidates") else []
+    contrast_sets = result.contrast_sets if hasattr(result, "contrast_sets") else None
+    return candidates, contrast_sets or []
+
+
+def _filter_contrast_sets(contrast_sets: list[dict]) -> list[dict]:
+    if not contrast_sets:
+        return []
+
+    safe_sets = []
+    for contrast_set in contrast_sets:
+        target_sentence = contrast_set.get("targetSentence", {})
+        contrast_sentence = contrast_set.get("contrastSentence", {})
+        target_text = target_sentence.get("text")
+        contrast_text = contrast_sentence.get("text")
+        if not isinstance(target_text, str) or not isinstance(contrast_text, str):
+            continue
+        if is_safe_sentence(target_text) and is_safe_sentence(contrast_text):
+            safe_sets.append(contrast_set)
+
+    return safe_sets
+
+
+def _validate_contrast_sets(
+    contrast_sets: list[dict],
+    request: GenerateRequestV2,
+    passed_texts: set[str],
+) -> list[dict]:
+    """Validate contrast sets for minimal/maximal oppositions.
+
+    - Target sentence must pass phoneme validation (exists in passed_texts).
+    - Both sentences must respect token length.
+    - Target/contrast words must appear in their respective token lists.
+    """
+    validated: list[dict] = []
+    for contrast_set in contrast_sets:
+        target_sentence = contrast_set.get("targetSentence", {})
+        contrast_sentence = contrast_set.get("contrastSentence", {})
+        target_text = target_sentence.get("text")
+        contrast_text = contrast_sentence.get("text")
+        if not isinstance(target_text, str) or not isinstance(contrast_text, str):
+            continue
+
+        # Require target sentence to pass phoneme validation
+        if target_text not in passed_texts:
+            continue
+
+        target_tokens = target_sentence.get("tokens", [])
+        contrast_tokens = contrast_sentence.get("tokens", [])
+        if (
+            not isinstance(target_tokens, list)
+            or not isinstance(contrast_tokens, list)
+            or len(target_tokens) != request.sentenceLength
+            or len(contrast_tokens) != request.sentenceLength
+        ):
+            continue
+
+        target_word = contrast_set.get("targetWord", "")
+        contrast_word = contrast_set.get("contrastWord", "")
+        if target_word and target_word not in target_tokens:
+            continue
+        if contrast_word and contrast_word not in contrast_tokens:
+            continue
+
+        validated.append(contrast_set)
+
+    return validated

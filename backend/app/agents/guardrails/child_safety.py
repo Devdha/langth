@@ -52,11 +52,11 @@ def is_safe_sentence(sentence: str) -> bool:
     return True
 
 
-def filter_unsafe_sentences(sentences: list[str]) -> list[str]:
+def filter_unsafe_sentences(sentences: list[str] | list[dict]) -> list:
     """안전하지 않은 문장을 필터링합니다.
 
     Args:
-        sentences: 검사할 문장 리스트
+        sentences: 검사할 문장 리스트 (문장 문자열 또는 문장 딕셔너리)
 
     Returns:
         안전한 문장만 포함된 리스트
@@ -66,4 +66,18 @@ def filter_unsafe_sentences(sentences: list[str]) -> list[str]:
         >>> filter_unsafe_sentences(sentences)
         ['라면이 맛있어요']
     """
-    return [s for s in sentences if is_safe_sentence(s)]
+    safe_sentences = []
+    for item in sentences:
+        if isinstance(item, str):
+            sentence = item
+        elif isinstance(item, dict):
+            sentence = item.get("sentence")
+            if not isinstance(sentence, str):
+                continue
+        else:
+            continue
+
+        if is_safe_sentence(sentence):
+            safe_sentences.append(item)
+
+    return safe_sentences

@@ -1,11 +1,15 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { TherapyItemV2 } from "@/types/v2";
+import { ContrastSet, LanguageV2, TherapyApproach, TherapyItemV2 } from "@/types/v2";
 import SentenceCardV2 from "./SentenceCardV2";
+import ContrastSetList from "./ContrastSetList";
 
 interface SentenceListV2Props {
   items: TherapyItemV2[];
+  contrastSets?: ContrastSet[];
+  therapyApproach?: TherapyApproach;
+  language?: LanguageV2;
   onDelete: (id: string) => void;
   onEdit: (item: TherapyItemV2) => void;
   onPlay: (item: TherapyItemV2) => void;
@@ -13,10 +17,22 @@ interface SentenceListV2Props {
 
 export default function SentenceListV2({
   items,
+  contrastSets,
+  therapyApproach,
+  language = "ko",
   onDelete,
   onEdit,
   onPlay,
 }: SentenceListV2Props) {
+  const showContrastSets =
+    (therapyApproach === "minimal_pairs" || therapyApproach === "maximal_oppositions") &&
+    contrastSets &&
+    contrastSets.length > 0;
+
+  if (showContrastSets) {
+    return <ContrastSetList sets={contrastSets} language={language} />;
+  }
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">

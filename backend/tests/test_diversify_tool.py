@@ -43,3 +43,30 @@ class TestDiversifyResults:
         ]
         results = diversify_results(scored, count=5)
         assert len(results) == 1
+
+    def test_limits_starting_word_repetition(self):
+        """문장 시작어 반복 완화"""
+        scored = [
+            ScoredSentence("나는 사과를 좋아해요", ["사과를"], 4, 90.0, {}),
+            ScoredSentence("나는 바나나를 좋아해요", ["바나나를"], 4, 89.0, {}),
+            ScoredSentence("나는 딸기를 좋아해요", ["딸기를"], 4, 88.0, {}),
+            ScoredSentence("너는 집에 가요", ["집에"], 4, 86.0, {}),
+            ScoredSentence("우리는 공원에 가요", ["공원에"], 4, 85.0, {}),
+        ]
+
+        results = diversify_results(scored, count=3)
+        starts = [r.sentence.split()[0] for r in results]
+        assert len(set(starts)) >= 2
+
+    def test_limits_repetitive_endings(self):
+        """문장 종결형 반복 완화"""
+        scored = [
+            ScoredSentence("사과를 먹어요", ["사과를"], 3, 90.0, {}),
+            ScoredSentence("바나나를 먹어요", ["바나나를"], 3, 89.0, {}),
+            ScoredSentence("딸기를 먹어요", ["딸기를"], 3, 88.0, {}),
+            ScoredSentence("공원에 가요", ["공원에"], 3, 87.0, {}),
+        ]
+
+        results = diversify_results(scored, count=3)
+        endings = [r.sentence.split()[-1] for r in results]
+        assert len(set(endings)) >= 2

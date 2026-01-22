@@ -4,6 +4,7 @@
 """
 
 from collections import defaultdict
+import re
 
 from app.agents.tools.score import ScoredSentence
 
@@ -41,23 +42,65 @@ def diversify_results(
         return scored
 
     selected: list[ScoredSentence] = []
+    selected_indexes: set[int] = set()
     pattern_counts: dict[str, int] = defaultdict(int)
+    start_counts: dict[str, int] = defaultdict(int)
+    ending_counts: dict[str, int] = defaultdict(int)
 
+    # 후보별 다양성 키 사전 계산
+    candidate_keys = []
     for sentence in scored:
-        if len(selected) >= count:
+        candidate_keys.append(
+            {
+                "pattern": _get_pattern(sentence),
+                "start": _get_start_key(sentence),
+                "ending": _get_ending_key(sentence),
+            }
+        )
+
+    # 다양성 페널티를 반영한 그리디 선택
+    for _ in range(count):
+        best_idx = None
+        best_adjusted_score = None
+
+        for idx, sentence in enumerate(scored):
+            if idx in selected_indexes:
+                continue
+
+            keys = candidate_keys[idx]
+            if pattern_counts[keys["pattern"]] >= max_similar:
+                continue
+
+            # 반복되는 시작어/종결형에 페널티 부여
+            penalty = (
+                start_counts[keys["start"]] * 3
+                + ending_counts[keys["ending"]] * 4
+            )
+            adjusted_score = sentence.score - penalty
+
+            if best_idx is None or adjusted_score > best_adjusted_score:
+                best_idx = idx
+                best_adjusted_score = adjusted_score
+
+        if best_idx is None:
             break
 
-        # 유사성 체크: 첫 번째 매칭 단어를 패턴으로 사용
-        pattern = _get_pattern(sentence)
+        selected_indexes.add(best_idx)
+        selected.append(scored[best_idx])
 
-        if pattern_counts[pattern] < max_similar:
-            selected.append(sentence)
-            pattern_counts[pattern] += 1
+        keys = candidate_keys[best_idx]
+        pattern_counts[keys["pattern"]] += 1
+        start_counts[keys["start"]] += 1
+        ending_counts[keys["ending"]] += 1
 
     # 부족하면 남은 것 중 추가
     if len(selected) < count:
-        remaining = [s for s in scored if s not in selected]
-        selected.extend(remaining[: count - len(selected)])
+        for idx, sentence in enumerate(scored):
+            if idx in selected_indexes:
+                continue
+            selected.append(sentence)
+            if len(selected) >= count:
+                break
 
     return selected
 
@@ -75,13 +118,136 @@ def _get_pattern(sentence: ScoredSentence) -> str:
         패턴 키 문자열
     """
     if sentence.matched_words:
-        # 매칭 단어의 첫 2글자를 패턴으로
+        # 매칭 단어를 패턴으로 (조사/기호 제거)
         first_match = sentence.matched_words[0]
-        return first_match[:2] if len(first_match) >= 2 else first_match
+        return _normalize_token(first_match)
 
     # 매칭 단어 없으면 문장 첫 단어
     words = sentence.sentence.split()
     if words:
-        return words[0][:2] if len(words[0]) >= 2 else words[0]
+        return _normalize_token(words[0])
 
     return ""
+
+
+def _get_start_key(sentence: ScoredSentence) -> str:
+    """문장 시작 패턴 키 추출.
+
+    Args:
+        sentence: 점수가 부여된 문장
+
+    Returns:
+        시작 패턴 키 문자열
+    """
+    words = sentence.sentence.split()
+    if not words:
+        return ""
+    return _normalize_token(words[0])
+
+
+def _get_ending_key(sentence: ScoredSentence) -> str:
+    """문장 종결 패턴 키 추출.
+
+    Args:
+        sentence: 점수가 부여된 문장
+
+    Returns:
+        종결 패턴 키 문자열
+    """
+    text = sentence.sentence.strip()
+    if not text:
+        return ""
+
+    if text.endswith("?"):
+        return "?"
+    if text.endswith("!"):
+        return "!"
+
+    text = text.rstrip(".")
+    words = text.split()
+    last_word = words[-1] if words else text
+
+    for ending in _COMMON_ENDINGS:
+        if last_word.endswith(ending):
+            return ending
+
+    normalized = re.sub(r"[^0-9A-Za-z가-힣]", "", last_word)
+    if not normalized:
+        return ""
+    return normalized[-2:] if len(normalized) >= 2 else normalized
+
+
+_COMMON_ENDINGS = [
+    "해주세요",
+    "주세요",
+    "할까요",
+    "까요",
+    "했어요",
+    "했어",
+    "해요",
+    "어요",
+    "아요",
+    "네요",
+    "세요",
+    "죠",
+    "요",
+    "다",
+]
+
+
+def _normalize_token(token: str) -> str:
+    """패턴 비교용 토큰 정규화.
+
+    Args:
+        token: 원본 토큰
+
+    Returns:
+        정규화된 토큰
+    """
+    cleaned = re.sub(r"[^0-9A-Za-z가-힣]", "", token)
+    if not cleaned:
+        return ""
+
+    if _contains_korean(cleaned):
+        return _strip_korean_particles(cleaned)
+    return cleaned.lower()
+
+
+def _contains_korean(text: str) -> bool:
+    return bool(re.search(r"[가-힣]", text))
+
+
+_KOREAN_PARTICLES = [
+    "이랑",
+    "랑",
+    "으로",
+    "로",
+    "까지",
+    "부터",
+    "처럼",
+    "같이",
+    "에게",
+    "께",
+    "한테",
+    "에서",
+    "에게서",
+    "으로부터",
+    "와",
+    "과",
+    "이",
+    "가",
+    "을",
+    "를",
+    "은",
+    "는",
+    "에",
+    "도",
+    "만",
+]
+
+
+def _strip_korean_particles(word: str) -> str:
+    for particle in _KOREAN_PARTICLES:
+        if word.endswith(particle) and len(word) > len(particle):
+            return word[: -len(particle)]
+    return word

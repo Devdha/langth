@@ -17,6 +17,7 @@ from app.api.v2.schemas import (
     CommunicativeFunction,
     TherapyApproach,
 )
+from app.services.lexical.core_vocabulary import resolve_core_words
 
 # Theme descriptions for sentence context
 THEME_DESCRIPTIONS: dict[str, dict[str, str]] = {
@@ -607,14 +608,7 @@ def _build_core_vocab_prompt(
     ctx = _get_common_context(request, lang)
 
     # Get core words from request or use defaults
-    core_words = request.core_words or []
-    if not core_words:
-        # Default core words if none provided
-        core_words = (
-            ["더", "또", "아니", "네", "싫어", "줘", "이거", "저거", "뭐", "어디"]
-            if lang == "ko"
-            else ["more", "want", "no", "yes", "help", "go", "stop", "my", "that", "what"]
-        )
+    core_words = resolve_core_words(lang, request.core_words)
 
     core_words_str = ", ".join(f'"{w}"' for w in core_words)
 

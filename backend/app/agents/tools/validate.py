@@ -4,10 +4,18 @@
 """
 
 from dataclasses import dataclass
+import string
 
-from app.api.v2.schemas import GenerateRequestV2, Language, PhonemePosition, TherapyApproach
+from app.api.v2.schemas import (
+    GenerateRequestV2,
+    Language,
+    PhonemePosition,
+    TherapyApproach,
+    DifficultyLevel,
+)
 from app.services.phoneme.korean import find_phoneme_matches
 from app.services.phoneme.english import find_phoneme_matches_en
+from app.services.lexical.core_vocabulary import resolve_core_words
 
 
 @dataclass
@@ -19,17 +27,19 @@ class ValidationResult:
         passed: 통과 여부
         matched_words: 타깃 음소를 포함한 단어들
         word_count: 문장의 단어/어절 수
+        difficulty: 난이도 (옵션)
         fail_reason: 실패 이유 (통과 시 None)
     """
     sentence: str
     passed: bool
     matched_words: list[str]
     word_count: int
+    difficulty: str | None = None
     fail_reason: str | None = None
 
 
 def validate_sentences(
-    sentences: list[str],
+    sentences: list[str] | list[dict],
     request: GenerateRequestV2,
 ) -> list[ValidationResult]:
     """문장들의 하드 제약을 검사합니다.
@@ -40,7 +50,7 @@ def validate_sentences(
     3. 최소 출현 횟수
 
     Args:
-        sentences: 검사할 문장 리스트
+        sentences: 검사할 문장 리스트 (문장 문자열 또는 문장 딕셔너리)
         request: 생성 요청 (조건 포함)
 
     Returns:
@@ -58,15 +68,37 @@ def validate_sentences(
         True
     """
     results = []
+    normalized = []
 
-    for sentence in sentences:
-        result = _validate_single(sentence, request)
+    allowed_difficulties = {level.value for level in DifficultyLevel}
+
+    for item in sentences:
+        if isinstance(item, str):
+            normalized.append({"sentence": item, "difficulty": None})
+        elif isinstance(item, dict):
+            sentence = item.get("sentence")
+            if not isinstance(sentence, str):
+                continue
+            difficulty = item.get("difficulty")
+            if isinstance(difficulty, str) and difficulty not in allowed_difficulties:
+                difficulty = None
+            normalized.append({
+                "sentence": sentence,
+                "difficulty": difficulty if isinstance(difficulty, str) else None,
+            })
+
+    for item in normalized:
+        result = _validate_single(item["sentence"], request, item.get("difficulty"))
         results.append(result)
 
     return results
 
 
-def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationResult:
+def _validate_single(
+    sentence: str,
+    request: GenerateRequestV2,
+    difficulty: str | None = None,
+) -> ValidationResult:
     """단일 문장 검증.
 
     Args:
@@ -86,17 +118,29 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
             passed=False,
             matched_words=[],
             word_count=word_count,
+            difficulty=difficulty,
             fail_reason=f"word_count: expected {request.sentenceLength}, got {word_count}",
         )
 
     # 2. 음소 검사
     # core_vocabulary(ASD)는 기능적 의사소통이 목표이므로 음소 검증 스킵
     if request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
+        core_words = resolve_core_words(request.language.value, request.core_words)
+        if not _contains_core_word(words, core_words, request.language):
+            return ValidationResult(
+                sentence=sentence,
+                passed=False,
+                matched_words=[],
+                word_count=word_count,
+                difficulty=difficulty,
+                fail_reason="core_vocabulary: missing core word",
+            )
         return ValidationResult(
             sentence=sentence,
             passed=True,
             matched_words=[],
             word_count=word_count,
+            difficulty=difficulty,
         )
 
     if request.target and request.target.phoneme:
@@ -120,6 +164,7 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
                 passed=False,
                 matched_words=match_result.matched_words,
                 word_count=word_count,
+                difficulty=difficulty,
                 fail_reason=f"phoneme: found {match_result.count}, need {request.target.minOccurrences}",
             )
 
@@ -128,6 +173,7 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
             passed=True,
             matched_words=match_result.matched_words,
             word_count=word_count,
+            difficulty=difficulty,
         )
 
     # 음소 타깃 없으면 길이만 통과하면 OK
@@ -136,7 +182,26 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
         passed=True,
         matched_words=[],
         word_count=word_count,
+        difficulty=difficulty,
     )
+
+
+def _normalize_token(token: str, language: Language) -> str:
+    cleaned = token.strip(string.punctuation)
+    if language == Language.EN:
+        return cleaned.lower()
+    return cleaned
+
+
+def _contains_core_word(words: list[str], core_words: list[str], language: Language) -> bool:
+    if not core_words:
+        return False
+
+    normalized_words = {_normalize_token(word, language) for word in words if word}
+    normalized_core = {_normalize_token(word, language) for word in core_words if word}
+    normalized_words.discard("")
+    normalized_core.discard("")
+    return not normalized_words.isdisjoint(normalized_core)
 
 
 def get_passed_sentences(results: list[ValidationResult]) -> list[dict]:
@@ -153,6 +218,7 @@ def get_passed_sentences(results: list[ValidationResult]) -> list[dict]:
             "sentence": r.sentence,
             "matched_words": r.matched_words,
             "word_count": r.word_count,
+            "difficulty": r.difficulty,
         }
         for r in results
         if r.passed

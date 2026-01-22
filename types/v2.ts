@@ -60,6 +60,7 @@ export interface GenerateResponseV2 {
   success: true;
   data: {
     items: TherapyItemV2[];
+    contrastSets?: ContrastSet[];
     meta: {
       requestedCount: number;
       generatedCount: number;
@@ -124,6 +125,7 @@ export interface TherapySession {
   updatedAt: number;
   settings: GameSettingsV2;
   items: TherapyItemV2[];
+  contrastSets?: ContrastSet[];
   metadata: {
     patientName?: string;
     notes?: string;

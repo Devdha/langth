@@ -82,27 +82,78 @@ FUNCTION_DESCRIPTIONS: dict[CommunicativeFunction, dict[str, str]] = {
     },
 }
 
-# Age-appropriate guidelines
+# Age-appropriate guidelines with specific examples and vocabulary constraints
 AGE_GUIDELINES: dict[int, dict[str, str]] = {
     3: {
-        "ko": "3세: 매우 간단한 문장, 1-2개 핵심 단어, 의성어/의태어 활용",
-        "en": "3 years: very simple sentences, 1-2 key words, use onomatopoeia",
+        "ko": """3세 (영유아):
+  - 어휘: 엄마, 아빠, 물, 밥, 까까, 맘마, 응가, 쉬, 아파, 뜨거, 잠, 공, 차, 멍멍, 야옹
+  - 문장 형태: 1-2단어 조합 또는 매우 짧은 문장
+  - 특징: 의성어/의태어 적극 활용 (멍멍, 야옹, 부릉, 콩콩, 쿵쿵)
+  - 조사: 생략 가능 ("밥 줘", "물 더")
+  - 예시: "밥 줘", "엄마 봐", "멍멍 왔어", "까까 더"
+  - 금지: 수영장, 창문, 장난감 같은 복잡한 단어 사용 금지""",
+        "en": """3 years (toddler):
+  - Vocabulary: mama, dada, water, milk, ball, car, doggy, kitty, owie, hot, no, more
+  - Sentence form: 1-2 word combinations or very short sentences
+  - Features: Use onomatopoeia (woof, meow, vroom, boom)
+  - Example: "more milk", "mama look", "doggy there"
+  - Avoid: complex words like swimming pool, window, playground""",
     },
     4: {
-        "ko": "4세: 간단한 문장, 기본 문법, 친숙한 단어 위주",
-        "en": "4 years: simple sentences, basic grammar, familiar vocabulary",
+        "ko": """4세 (유아 초기):
+  - 어휘: 기본 가족(엄마, 아빠, 동생), 음식(사과, 바나나, 우유), 동물(강아지, 고양이, 토끼)
+  - 문장 형태: 간단한 주어+서술어 또는 주어+목적어+서술어
+  - 특징: 기본 조사 사용 가능 (-가, -를, -에)
+  - 예시: "강아지가 와요", "사과 먹어", "엄마 여기 있어"
+  - 금지: 추상적 개념, 복잡한 시간 표현""",
+        "en": """4 years (early preschool):
+  - Vocabulary: basic family (mom, dad, baby), food (apple, cookie, juice), animals (dog, cat, bird)
+  - Sentence form: simple subject+verb or subject+object+verb
+  - Features: basic prepositions (in, on, at)
+  - Example: "doggy is here", "I want apple", "mommy help"
+  - Avoid: abstract concepts, complex time expressions""",
     },
     5: {
-        "ko": "5세: 기본 문장, 조사 사용, 간단한 접속 표현",
-        "en": "5 years: basic sentences, proper particles, simple conjunctions",
+        "ko": """5세 (유아 중기):
+  - 어휘: 확장된 명사(유치원, 친구, 선생님), 동사(만들다, 그리다, 달리다)
+  - 문장 형태: 기본 문장, 조사 정확히 사용
+  - 특징: -고, -서 등 간단한 연결어미 사용 가능
+  - 예시: "친구랑 놀고 싶어", "선생님이 책 읽어줬어", "유치원에서 그림 그렸어"
+  - 금지: 복잡한 종속절, 피동/사동 표현""",
+        "en": """5 years (mid preschool):
+  - Vocabulary: expanded nouns (school, friend, teacher), verbs (make, draw, run)
+  - Sentence form: basic sentences with proper grammar
+  - Features: simple conjunctions (and, because)
+  - Example: "I want to play with friend", "teacher read the book"
+  - Avoid: complex subordinate clauses, passive voice""",
     },
     6: {
-        "ko": "6세: 복합 문장 가능, 다양한 조사, 시제 표현",
-        "en": "6 years: compound sentences possible, varied particles, tense expressions",
+        "ko": """6세 (유아 후기):
+  - 어휘: 다양한 명사, 형용사, 부사 사용 가능
+  - 문장 형태: 복합 문장, 시제 표현 가능
+  - 특징: -면, -니까 등 조건/이유 표현 가능
+  - 예시: "비가 오면 우산 써야 해", "배고프니까 밥 먹자", "어제 공원에서 놀았어"
+  - 허용: 과거/미래 시제, 간단한 비유""",
+        "en": """6 years (late preschool):
+  - Vocabulary: varied nouns, adjectives, adverbs
+  - Sentence form: compound sentences, tense expressions
+  - Features: conditional/reason expressions (if, because, when)
+  - Example: "If it rains, we need umbrella", "I played at the park yesterday"
+  - Allowed: past/future tense, simple metaphors""",
     },
     7: {
-        "ko": "7세: 복잡한 문장 구조, 추상적 개념, 비유 표현",
-        "en": "7 years: complex sentence structures, abstract concepts, figurative language",
+        "ko": """7세 (학령기 진입):
+  - 어휘: 학교 관련 어휘, 추상적 개념 가능
+  - 문장 형태: 복잡한 문장 구조 가능
+  - 특징: 비유, 추론, 가정 표현 가능
+  - 예시: "만약 내가 새라면 하늘을 날 텐데", "그 이야기는 슬프지만 감동적이야"
+  - 허용: 피동/사동, 관형절, 추상적 표현""",
+        "en": """7 years (school entry):
+  - Vocabulary: school-related words, abstract concepts allowed
+  - Sentence form: complex sentence structures
+  - Features: metaphors, inferences, hypothetical expressions
+  - Example: "If I were a bird, I would fly", "The story is sad but touching"
+  - Allowed: passive voice, relative clauses, abstract expressions""",
     },
 }
 
@@ -566,7 +617,15 @@ def _build_core_vocab_prompt(
 
     if lang == "ko":
         return f"""당신은 아동 언어치료사를 돕는 전문 문장 생성 AI입니다.
-핵심 어휘 치료를 위한 문장 {batch_size}개를 생성해주세요.
+핵심 어휘(AAC/ASD) 치료를 위한 문장 {batch_size}개를 생성해주세요.
+
+## ⚠️ 가장 중요한 규칙 ⚠️
+
+**모든 문장에 아래 핵심 어휘 중 하나가 반드시 포함되어야 합니다!**
+핵심 어휘 없는 문장은 무효입니다.
+
+### 핵심 어휘 목록 (필수 선택!)
+{core_words_str}
 
 ## 생성 조건
 
@@ -575,30 +634,35 @@ def _build_core_vocab_prompt(
 - 대상 아동 연령: {request.age}세
 - {ctx['age_guideline']}
 
-### 문장 구조 (매우 중요!)
-- **tokens 배열의 길이가 정확히 {request.sentenceLength}개여야 합니다**
+### 문장 구조
+- **tokens 배열의 길이: 정확히 {request.sentenceLength}개**
 - 서버가 tokens를 join하여 문장을 만듭니다
-- 목표 음소: '{request.target.phoneme}'
+- 목표 음소: '{request.target.phoneme}' (가능하면 포함, 핵심 어휘가 우선)
 - 음소 위치: {ctx['position_desc']}
-
-### 핵심 어휘 목록 (반드시 사용!)
-{core_words_str}
 
 ### 치료 정보
 - 진단명: {request.diagnosis.value}
 - 치료 접근법: 핵심 어휘 접근법{ctx['theme_section']}{ctx['function_section']}
 
-## 핵심 어휘 접근법 설명
-- 위의 핵심 어휘 중 하나를 반드시 문장에 포함해야 합니다
-- 핵심 어휘는 다양한 상황에서 자주 사용되는 기능어입니다
-- 같은 핵심 어휘를 여러 다른 문맥에서 반복 사용하세요
+## 우선순위 (반드시 지킬 것!)
 
-## 중요 지침
+1. **핵심 어휘 포함** (최우선!) - 문장에 핵심 어휘가 없으면 실패
+2. **토큰 수 정확성** - tokens 배열이 정확히 {request.sentenceLength}개
+3. **목표 음소** - 가능하면 목표 음소 '{request.target.phoneme}' 포함
+4. **아동 적절성** - 긍정적이고 안전한 내용
 
-1. **토큰 수 정확성**: 모든 문장의 tokens 배열은 정확히 {request.sentenceLength}개 요소를 가져야 합니다
-2. **핵심 어휘 필수**: 각 문장에 위 목록의 핵심 어휘 중 하나가 반드시 포함되어야 합니다
-3. **아동 적절성**: 긍정적이고 안전한 내용만 생성
-4. **다양한 문맥**: 같은 핵심 어휘도 다양한 상황에서 사용
+## 올바른 예시 (핵심 어휘 포함됨)
+
+- "줘" 포함: ["사과", "좀", "줘"] → "사과 좀 줘"
+- "더" 포함: ["더", "먹고", "싶어"] → "더 먹고 싶어"
+- "뭐" 포함: ["이거", "뭐야?"] → "이거 뭐야?" (2어절)
+- "싫어" 포함: ["나", "이거", "싫어"] → "나 이거 싫어"
+- "이거" 포함: ["이거", "가져", "줘"] → "이거 가져 줘"
+
+## 잘못된 예시 (핵심 어휘 없음 - 생성 금지!)
+
+- ❌ ["고양이가", "밥을", "먹어요"] - 핵심 어휘 없음!
+- ❌ ["강아지가", "공을", "쳐요"] - 핵심 어휘 없음!
 
 ## 출력 형식
 
@@ -608,15 +672,31 @@ def _build_core_vocab_prompt(
   {{
     "core_word": "줘",
     "tokens": ["우유", "좀", "줘"]
+  }},
+  {{
+    "core_word": "더",
+    "tokens": ["더", "놀고", "싶어"]
+  }},
+  {{
+    "core_word": "이거",
+    "tokens": ["이거", "뭐야?"]
   }}
 ]}}
 ```
 
-{batch_size}개 문장을 생성해주세요. JSON 출력만 허용됩니다."""
+{batch_size}개 문장을 생성해주세요. 모든 문장에 핵심 어휘가 포함되어야 합니다. JSON 출력만 허용됩니다."""
 
     else:
         return f"""You are a specialized AI assistant helping speech-language pathologists.
-Please generate {batch_size} sentences for core vocabulary therapy.
+Please generate {batch_size} sentences for core vocabulary (AAC/ASD) therapy.
+
+## ⚠️ MOST IMPORTANT RULE ⚠️
+
+**Every sentence MUST include one of the core words below!**
+Sentences without a core word are invalid.
+
+### Core Vocabulary List (REQUIRED!)
+{core_words_str}
 
 ## Generation Requirements
 
@@ -625,30 +705,34 @@ Please generate {batch_size} sentences for core vocabulary therapy.
 - Target child age: {request.age} years old
 - {ctx['age_guideline']}
 
-### Sentence Structure (CRITICAL!)
+### Sentence Structure
 - **The tokens array must have exactly {request.sentenceLength} elements**
 - The server joins tokens to create the sentence
-- Target phoneme: '{request.target.phoneme}'
+- Target phoneme: '{request.target.phoneme}' (include if possible, but core word takes priority)
 - Phoneme position: {ctx['position_desc']}
-
-### Core Vocabulary List (MUST USE!)
-{core_words_str}
 
 ### Therapy Information
 - Diagnosis: {request.diagnosis.value}
 - Therapy approach: core vocabulary approach{ctx['theme_section']}{ctx['function_section']}
 
-## Core Vocabulary Approach Explanation
-- Each sentence MUST include one of the core words listed above
-- Core words are high-frequency function words used across many contexts
-- Use the same core word in multiple different contexts
+## Priority Order (MUST FOLLOW!)
 
-## Important Guidelines
+1. **Core word inclusion** (TOP PRIORITY!) - No core word = failure
+2. **Token count accuracy** - tokens array must have exactly {request.sentenceLength} elements
+3. **Target phoneme** - Include '{request.target.phoneme}' if possible
+4. **Child appropriateness** - Positive and safe content only
 
-1. **Token count accuracy**: All sentence tokens arrays must have exactly {request.sentenceLength} elements
-2. **Core word required**: Each sentence must include one core word from the list above
-3. **Child appropriateness**: Only positive and safe content
-4. **Varied contexts**: Use the same core word in different situations
+## Correct Examples (core word included)
+
+- "want" included: ["I", "want", "more"] → "I want more"
+- "help" included: ["Please", "help", "me"] → "Please help me"
+- "go" included: ["Let's", "go", "play"] → "Let's go play"
+- "no" included: ["No", "thank", "you"] → "No thank you"
+
+## Wrong Examples (no core word - DO NOT GENERATE!)
+
+- ❌ ["The", "cat", "runs"] - No core word!
+- ❌ ["Birds", "fly", "high"] - No core word!
 
 ## Output Format
 
@@ -657,12 +741,16 @@ Output MUST be in the following JSON format only:
 {{"items": [
   {{
     "core_word": "want",
-    "tokens": ["I", "want", "more", "cookies"]
+    "tokens": ["I", "want", "more"]
+  }},
+  {{
+    "core_word": "help",
+    "tokens": ["Please", "help", "me"]
   }}
 ]}}
 ```
 
-Generate {batch_size} sentences. JSON output only."""
+Generate {batch_size} sentences. Every sentence must contain a core word. JSON output only."""
 
 
 def _generate_word_count_examples(word_count: int) -> str:

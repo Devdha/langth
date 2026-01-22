@@ -53,9 +53,9 @@ export default function SettingsPanelV2({
 }: SettingsPanelV2Props) {
   const [diagnosis, setDiagnosis] = useState(initialSettings?.diagnosis || 'SSD');
   const [therapyApproach, setTherapyApproach] = useState(initialSettings?.therapyApproach || 'minimal_pairs');
-  const [phoneme, setPhoneme] = useState(initialSettings?.target.phoneme || 'ㄹ');
-  const [position, setPosition] = useState(initialSettings?.target.position || 'onset');
-  const [minOccurrences, setMinOccurrences] = useState(initialSettings?.target.minOccurrences || 1);
+  const [phoneme, setPhoneme] = useState(initialSettings?.target?.phoneme || 'ㄹ');
+  const [position, setPosition] = useState(initialSettings?.target?.position || 'onset');
+  const [minOccurrences, setMinOccurrences] = useState(initialSettings?.target?.minOccurrences || 1);
   const [sentenceLength, setSentenceLength] = useState(initialSettings?.sentenceLength || 3);
   const [theme, setTheme] = useState(initialSettings?.theme || '');
   const [communicativeFunction, setCommunicativeFunction] = useState<CommunicativeFunction | null>(

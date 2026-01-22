@@ -89,9 +89,15 @@ export default function SentenceCardV2({
           >
             {item.diagnosis}
           </span>
-          <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-200">
-            {item.target.phoneme} · {positionLabels[item.target.position]}
-          </span>
+          {item.target ? (
+            <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-200">
+              {item.target.phoneme} · {positionLabels[item.target.position]}
+            </span>
+          ) : (
+            <span className="bg-gradient-to-r from-pink-100 to-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold border border-purple-200">
+              핵심어휘
+            </span>
+          )}
         </div>
 
         {/* Sentence with highlighting */}

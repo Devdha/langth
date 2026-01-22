@@ -111,7 +111,9 @@ export default function SessionHeader({
             )}
             <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full">
               <Target size={14} />
-              {session.settings.target.phoneme} ({session.settings.target.position})
+              {session.settings.target
+                ? `${session.settings.target.phoneme} (${session.settings.target.position})`
+                : '핵심어휘'}
             </span>
             <span className="bg-white/10 px-3 py-1 rounded-full">
               {session.items.length}개 문장

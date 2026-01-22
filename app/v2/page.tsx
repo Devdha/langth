@@ -500,6 +500,7 @@ export default function V2Page() {
 
       {currentSession && (
         <SettingsPanelV2
+          key={currentSession.id}
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           onGenerate={handleGenerate}

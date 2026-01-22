@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star } from "lucide-react";
 import { GameSettingsV2, LanguageV2, CommunicativeFunction } from "@/types/v2";
@@ -64,23 +64,6 @@ export default function SettingsPanelV2({
   const [age, setAge] = useState<3 | 4 | 5 | 6 | 7>(initialSettings?.age || 4);
   const [language, setLanguage] = useState<LanguageV2>(initialSettings?.language || 'ko');
   const [count, setCount] = useState(initialSettings?.count || 10);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const settings = initialSettings;
-    if (!settings) return;
-    setDiagnosis(settings.diagnosis || 'SSD');
-    setTherapyApproach(settings.therapyApproach || 'minimal_pairs');
-    setPhoneme(settings.target?.phoneme || 'ㄹ');
-    setPosition(settings.target?.position || 'onset');
-    setMinOccurrences(settings.target?.minOccurrences || 1);
-    setSentenceLength(settings.sentenceLength || 3);
-    setTheme(settings.theme || '');
-    setCommunicativeFunction(settings.communicativeFunction || null);
-    setAge(settings.age || 4);
-    setLanguage(settings.language || 'ko');
-    setCount(settings.count || 10);
-  }, [initialSettings, isOpen]);
 
   const handleGenerate = () => {
     const settings: GameSettingsV2 = {

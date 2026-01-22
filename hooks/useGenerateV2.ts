@@ -93,11 +93,14 @@ export function useGenerateV2(
 
     try {
       // Map GameSettingsV2 to GenerateRequestV2
+      // core_vocabulary doesn't need target (phoneme config)
       const requestBody: GenerateRequestV2 = {
         language: settings.language,
         age: settings.age,
         count: settings.count,
-        target: settings.target,
+        ...(settings.therapyApproach !== 'core_vocabulary' && settings.target
+          ? { target: settings.target }
+          : {}),
         sentenceLength: settings.sentenceLength,
         diagnosis: settings.diagnosis,
         therapyApproach: settings.therapyApproach,

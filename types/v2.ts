@@ -30,7 +30,7 @@ export interface MatchedWord {
 export interface TherapyItemV2 {
   id: string;
   text: string;
-  target: TargetConfigV2;
+  target?: TargetConfigV2;  // Optional for core_vocabulary approach
   matchedWords: MatchedWord[];
   wordCount: number;
   score: number;
@@ -47,7 +47,7 @@ export interface GenerateRequestV2 {
   language: LanguageV2;
   age: 3 | 4 | 5 | 6 | 7;
   count: number;
-  target: TargetConfigV2;
+  target?: TargetConfigV2;  // Optional for core_vocabulary approach
   sentenceLength: number;
   diagnosis: DiagnosisType;
   therapyApproach: TherapyApproach;
@@ -83,7 +83,7 @@ export interface GameSettingsV2 {
   language: LanguageV2;
   age: 3 | 4 | 5 | 6 | 7;
   count: number;
-  target: TargetConfigV2;
+  target?: TargetConfigV2;  // Optional for core_vocabulary approach
   sentenceLength: number;
   diagnosis: DiagnosisType;
   therapyApproach: TherapyApproach;

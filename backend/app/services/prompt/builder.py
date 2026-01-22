@@ -242,7 +242,10 @@ def _get_common_context(request: GenerateRequestV2, lang: str) -> dict[str, str]
         Dictionary with common context values.
     """
     age_guideline = AGE_GUIDELINES.get(request.age, AGE_GUIDELINES[5])[lang]
-    position_desc = POSITION_DESCRIPTIONS[request.target.position][lang]
+    # target이 None일 수 있음 (core_vocabulary)
+    position_desc = ""
+    if request.target:
+        position_desc = POSITION_DESCRIPTIONS[request.target.position][lang]
 
     theme_section = ""
     if request.theme:

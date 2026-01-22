@@ -66,9 +66,10 @@ async def run_pipeline(
     start_time = time.time()
     all_validated: list[dict] = []
 
+    # target이 없을 수 있음 (core_vocabulary)
+    target_info = f"phoneme={request.target.phoneme}, position={request.target.position}" if request.target else "no target"
     logger.info(
-        f"[Pipeline] 시작 - count={request.count}, phoneme={request.target.phoneme}, "
-        f"position={request.target.position}, approach={request.therapyApproach}"
+        f"[Pipeline] 시작 - count={request.count}, {target_info}, approach={request.therapyApproach}"
     )
 
     # 재시도 루프
@@ -181,20 +182,21 @@ def _to_therapy_item(scored, request: GenerateRequestV2) -> TherapyItemV2:
     Returns:
         TherapyItemV2
     """
-    # 매칭 단어 위치 계산
+    # 매칭 단어 위치 계산 (target이 있을 때만)
     matched_words = []
-    text = scored.sentence
-    for word in scored.matched_words:
-        start = text.find(word)
-        if start >= 0:
-            matched_words.append(
-                MatchedWord(
-                    word=word,
-                    startIndex=start,
-                    endIndex=start + len(word),
-                    positions=[request.target.position],
+    if request.target:
+        text = scored.sentence
+        for word in scored.matched_words:
+            start = text.find(word)
+            if start >= 0:
+                matched_words.append(
+                    MatchedWord(
+                        word=word,
+                        startIndex=start,
+                        endIndex=start + len(word),
+                        positions=[request.target.position],
+                    )
                 )
-            )
 
     return TherapyItemV2(
         id=str(uuid.uuid4()),

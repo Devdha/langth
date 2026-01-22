@@ -99,7 +99,7 @@ def _validate_single(sentence: str, request: GenerateRequestV2) -> ValidationRes
             word_count=word_count,
         )
 
-    if request.target.phoneme:
+    if request.target and request.target.phoneme:
         if request.language == Language.KO:
             match_result = find_phoneme_matches(
                 sentence,

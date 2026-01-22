@@ -97,7 +97,7 @@ class GenerateRequestV2(BaseModel):
         language: The language for sentence generation (ko or en).
         age: Target age group (3-7 years).
         count: Number of sentences to generate (1-20).
-        target: Configuration for the target phoneme.
+        target: Configuration for the target phoneme (optional for core_vocabulary).
         sentenceLength: Number of words in each sentence (2-6).
         diagnosis: The diagnosis type for therapy customization.
         therapyApproach: The therapy approach to use.
@@ -110,7 +110,7 @@ class GenerateRequestV2(BaseModel):
     language: Language
     age: Literal[3, 4, 5, 6, 7]
     count: int = Field(..., ge=1, le=20)
-    target: TargetConfig
+    target: TargetConfig | None = None  # Optional for core_vocabulary approach
     sentenceLength: int = Field(..., ge=2, le=6)
     diagnosis: DiagnosisType
     therapyApproach: TherapyApproach
@@ -142,7 +142,7 @@ class TherapyItemV2(BaseModel):
     Attributes:
         id: Unique identifier for the sentence.
         text: The generated sentence text.
-        target: The target phoneme configuration used.
+        target: The target phoneme configuration used (optional for core_vocabulary).
         matchedWords: Words in the sentence that contain the target phoneme.
         wordCount: Number of words in the sentence.
         score: Quality score for the sentence.
@@ -154,7 +154,7 @@ class TherapyItemV2(BaseModel):
 
     id: str
     text: str
-    target: TargetConfig
+    target: TargetConfig | None = None  # Optional for core_vocabulary approach
     matchedWords: list[MatchedWord]
     wordCount: int
     score: float

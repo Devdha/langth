@@ -70,11 +70,16 @@ export default function SettingsPanelV2({
       language,
       age,
       count,
-      target: {
-        phoneme,
-        position,
-        minOccurrences,
-      },
+      // core_vocabulary doesn't need target (phoneme config)
+      ...(therapyApproach !== 'core_vocabulary'
+        ? {
+            target: {
+              phoneme,
+              position,
+              minOccurrences,
+            },
+          }
+        : {}),
       sentenceLength,
       diagnosis,
       therapyApproach,

@@ -88,13 +88,25 @@ async def generate_candidates(
     client = _get_client()
 
     # GPT-5.2는 Responses API 사용, reasoning effort로 응답 품질 조절
-    # 문장 생성은 창의적 작업이므로 low effort로 빠른 응답 유도
-    system_prompt = "You are a helpful assistant that generates therapy sentences. Always respond in valid JSON format."
+    # 치료 접근법에 따라 reasoning effort 조절:
+    # - core_vocabulary: 핵심 어휘 포함 등 복잡한 조건이 많으므로 medium
+    # - complexity: 난이도 분류가 필요하므로 medium
+    # - 기타: low로 빠른 응답
+    from app.api.v2.schemas import TherapyApproach
+
+    reasoning_effort = "low"
+    if request.therapyApproach in (
+        TherapyApproach.CORE_VOCABULARY,
+        TherapyApproach.COMPLEXITY,
+    ):
+        reasoning_effort = "medium"
+
+    system_prompt = "You are a helpful assistant that generates therapy sentences. Always respond in valid JSON format. Follow ALL requirements in the prompt exactly."
 
     response = await client.responses.create(
         model="gpt-5.2",
         input=f"{system_prompt}\n\n{prompt}",
-        reasoning={"effort": "low"},
+        reasoning={"effort": reasoning_effort},
         text={"format": {"type": "json_object"}},
     )
 

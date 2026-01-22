@@ -160,6 +160,49 @@ def build_generation_prompt(request: GenerateRequestV2, batch_size: int) -> str:
         return _build_english_prompt(request, batch_size)
 
 
+def _generate_word_count_examples(word_count: int) -> str:
+    """Generate examples showing correct word count.
+
+    Args:
+        word_count: The required number of words/어절.
+
+    Returns:
+        A string with examples of correct word counts.
+    """
+    examples = {
+        2: [
+            ("사과 먹어요", 2),
+            ("강아지 귀여워", 2),
+        ],
+        3: [
+            ("고양이가 밥을 먹어요", 3),
+            ("엄마가 책을 읽어요", 3),
+            ("강아지가 공을 물었어요", 3),
+        ],
+        4: [
+            ("고양이가 간식을 먹고 있어요", 4),
+            ("아빠가 요리를 하고 있어요", 4),
+            ("동생이 그림을 열심히 그려요", 4),
+        ],
+        5: [
+            ("엄마가 맛있는 간식을 만들어 주었어요", 5),
+            ("우리 가족이 함께 공원에 갔어요", 5),
+        ],
+        6: [
+            ("아빠가 오늘 저녁에 맛있는 음식을 만들었어요", 6),
+        ],
+    }
+
+    if word_count not in examples:
+        return ""
+
+    lines = [f"**{word_count}어절 예시:**"]
+    for sentence, count in examples[word_count]:
+        lines.append(f'  - "{sentence}" ({count}어절)')
+
+    return "\n".join(lines)
+
+
 def _build_korean_prompt(request: GenerateRequestV2, batch_size: int) -> str:
     """Build a Korean prompt for therapy sentence generation.
 
@@ -186,6 +229,9 @@ def _build_korean_prompt(request: GenerateRequestV2, batch_size: int) -> str:
         func_desc = FUNCTION_DESCRIPTIONS[request.communicativeFunction]["ko"]
         function_section = f"\n- 의사소통 기능: {func_desc}"
 
+    # Generate word count examples
+    word_examples = _generate_word_count_examples(request.sentenceLength)
+
     prompt = f"""당신은 아동 언어치료사를 돕는 전문 문장 생성 AI입니다.
 다음 조건에 맞는 한국어 치료 문장 {batch_size}개를 생성해주세요.
 
@@ -196,11 +242,13 @@ def _build_korean_prompt(request: GenerateRequestV2, batch_size: int) -> str:
 - 대상 아동 연령: {request.age}세
 - {age_guideline}
 
-### 문장 구조
-- 문장 길이: {request.sentenceLength}어절 (띄어쓰기 기준)
+### 문장 구조 (⚠️ 매우 중요)
+- **문장 길이: 정확히 {request.sentenceLength}어절** (띄어쓰기로 구분된 단어 수)
 - 목표 음소: '{request.target.phoneme}'
 - 음소 위치: {position_desc}
 - 최소 출현 횟수: {request.target.minOccurrences}회 이상
+
+{word_examples}
 
 ### 치료 정보
 - 진단명: {request.diagnosis.value}
@@ -208,15 +256,18 @@ def _build_korean_prompt(request: GenerateRequestV2, batch_size: int) -> str:
 
 ## 중요 지침
 
-1. **아동 적절성**: 모든 문장은 아동에게 안전하고 적절한 내용이어야 합니다.
+1. **어절 수 정확성 (가장 중요!)**: 모든 문장은 반드시 정확히 {request.sentenceLength}어절이어야 합니다.
+   - 어절 = 띄어쓰기로 구분된 단어
+   - {request.sentenceLength - 1}어절이나 {request.sentenceLength + 1}어절은 허용되지 않습니다
+   - 생성 전에 어절 수를 꼭 세어보세요
+
+2. **아동 적절성**: 모든 문장은 아동에게 안전하고 적절한 내용이어야 합니다.
    - 폭력, 공포, 부정적 감정 표현 금지
    - 긍정적이고 밝은 내용 위주
 
-2. **음소 정확성**: 목표 음소 '{request.target.phoneme}'이(가) 지정된 위치({position_desc})에 {request.target.minOccurrences}회 이상 포함되어야 합니다.
+3. **음소 정확성**: 목표 음소 '{request.target.phoneme}'이(가) 지정된 위치({position_desc})에 {request.target.minOccurrences}회 이상 포함되어야 합니다.
 
-3. **자연스러움**: 문장이 자연스럽고 일상에서 사용할 수 있는 표현이어야 합니다.
-
-4. **다양성**: 생성되는 문장들이 서로 다르고 다양해야 합니다.
+4. **자연스러움**: 문장이 자연스럽고 일상에서 사용할 수 있는 표현이어야 합니다.
 
 ## 출력 형식
 
@@ -225,7 +276,7 @@ def _build_korean_prompt(request: GenerateRequestV2, batch_size: int) -> str:
 {{"sentences": ["문장1", "문장2", "문장3", ...]}}
 ```
 
-{batch_size}개의 문장을 생성해주세요."""
+{batch_size}개의 **정확히 {request.sentenceLength}어절** 문장을 생성해주세요."""
 
     return prompt
 

@@ -9,7 +9,7 @@ import {
   ErrorResponseV2,
 } from "@/types/v2";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765';
 const LOADING_TIMEOUT = 60000; // 60 seconds for v2 pipeline
 
 interface GenerateMeta {

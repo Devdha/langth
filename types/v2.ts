@@ -82,3 +82,21 @@ export interface GameSettingsV2 {
   theme: string;
   communicativeFunction: CommunicativeFunction | null;
 }
+
+// Session color options
+export type SessionColor = 'purple' | 'pink' | 'blue' | 'green' | 'orange' | 'red';
+
+// Therapy session for IndexedDB storage
+export interface TherapySession {
+  id: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  settings: GameSettingsV2;
+  items: TherapyItemV2[];
+  metadata: {
+    patientName?: string;
+    notes?: string;
+    color?: SessionColor;
+  };
+}

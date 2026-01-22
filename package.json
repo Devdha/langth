@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3456",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3456",
     "lint": "eslint",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "framer-motion": "^12.25.0",
+    "idb": "^8.0.3",
     "lucide-react": "^0.562.0",
     "next": "^15.1.11",
     "openai": "^6.15.0",

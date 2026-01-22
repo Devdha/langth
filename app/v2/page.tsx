@@ -5,58 +5,64 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
 import SentenceListV2 from "@/components/v2/SentenceListV2";
+import SessionSidebar from "@/components/v2/SessionSidebar";
+import SessionHeader from "@/components/v2/SessionHeader";
+import NewSessionModal from "@/components/v2/NewSessionModal";
+import EmptyState from "@/components/v2/EmptyState";
 import { useGenerateV2 } from "@/hooks/useGenerateV2";
 import {
   GameSettingsV2,
   TherapyItemV2,
+  TherapySession,
+  SessionColor,
 } from "@/types/v2";
-
-const STORAGE_KEY_V2 = 'talk-talk-vending-v2-items';
-const SETTINGS_KEY_V2 = 'talk-talk-vending-v2-settings';
+import {
+  getAllSessions,
+  createSession,
+  updateSession,
+  deleteSession,
+  duplicateSession,
+} from "@/lib/db/sessions";
 
 const DEFAULT_SETTINGS: GameSettingsV2 = {
-  language: 'ko',
+  language: "ko",
   age: 4,
   count: 10,
   target: {
-    phoneme: 'ㄹ',
-    position: 'onset',
-    minOccurrences: 1
+    phoneme: "ㄹ",
+    position: "onset",
+    minOccurrences: 1,
   },
   sentenceLength: 3,
-  diagnosis: 'SSD',
-  therapyApproach: 'minimal_pairs',
-  theme: '',
+  diagnosis: "SSD",
+  therapyApproach: "minimal_pairs",
+  theme: "",
   communicativeFunction: null,
 };
 
 export default function V2Page() {
+  // Session state
+  const [sessions, setSessions] = useState<TherapySession[]>([]);
+  const [currentSession, setCurrentSession] = useState<TherapySession | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // UI state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  // Use lazy initialization to avoid hydration issues
-  const [localItems, setLocalItems] = useState<TherapyItemV2[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_V2);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-  const [isInitialized, setIsInitialized] = useState(() => typeof window !== 'undefined');
-  const [settings, setSettings] = useState<GameSettingsV2>(() => {
-    if (typeof window === 'undefined') return DEFAULT_SETTINGS;
-    try {
-      const saved = localStorage.getItem(SETTINGS_KEY_V2);
-      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-    } catch { return DEFAULT_SETTINGS; }
-  });
+  const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
-    typeof window !== 'undefined' ? navigator.onLine : true
+    typeof window !== "undefined" ? navigator.onLine : true
   );
 
-  // Use the custom hook for API calls
-  // Memoized callback to avoid recreating generate function on every render
+  // Generate hook
   const handleGenerateSuccess = useCallback((items: TherapyItemV2[]) => {
-    setLocalItems(items);
-  }, []);
+    if (currentSession) {
+      setCurrentSession((prev) => (prev ? { ...prev, items } : null));
+      setHasUnsavedChanges(true);
+    }
+  }, [currentSession]);
 
   const {
     generate,
@@ -64,85 +70,183 @@ export default function V2Page() {
     loading,
     error,
     warning,
-    meta,
     clearWarning,
   } = useGenerateV2(handleGenerateSuccess);
 
-  // Online/offline detection (subscribe to events only)
+  // Load sessions on mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const loaded = await getAllSessions();
+        setSessions(loaded);
+      } catch (e) {
+        console.error("Failed to load sessions", e);
+      }
+      setIsInitialized(true);
+    };
+    loadSessions();
+  }, []);
+
+  // Online/offline detection
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // Save items to localStorage
-  useEffect(() => {
-    if (isInitialized && typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(localItems));
-    }
-  }, [localItems, isInitialized]);
+  // Session handlers - defined before keyboard shortcuts effect
+  const handleSaveSession = useCallback(async () => {
+    if (!currentSession) return;
+    await updateSession(currentSession.id, {
+      items: currentSession.items,
+      settings: currentSession.settings,
+      metadata: currentSession.metadata,
+    });
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === currentSession.id
+          ? { ...currentSession, updatedAt: Date.now() }
+          : s
+      )
+    );
+    setHasUnsavedChanges(false);
+  }, [currentSession]);
 
-  // Save settings to localStorage
+  // Keyboard shortcuts
   useEffect(() => {
-    if (isInitialized && typeof window !== 'undefined') {
-      localStorage.setItem(SETTINGS_KEY_V2, JSON.stringify(settings));
-    }
-  }, [settings, isInitialized]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (currentSession && hasUnsavedChanges) {
+          handleSaveSession();
+        }
+      }
+      // Escape to close modals/panels
+      if (e.key === "Escape") {
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+        } else if (isNewSessionModalOpen) {
+          setIsNewSessionModalOpen(false);
+        } else if (isMobileSidebarOpen) {
+          setIsMobileSidebarOpen(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentSession, hasUnsavedChanges, isSettingsOpen, isNewSessionModalOpen, isMobileSidebarOpen, handleSaveSession]);
 
-  const handleReset = () => {
-    if (confirm('모든 문장을 삭제하시겠습니까?')) {
-      setLocalItems([]);
+  const handleCreateSession = async (
+    name: string,
+    patientName: string,
+    color: SessionColor
+  ) => {
+    const session = await createSession(name, DEFAULT_SETTINGS, {
+      patientName: patientName || undefined,
+      color,
+    });
+    setSessions((prev) => [session, ...prev]);
+    setCurrentSession(session);
+    setIsNewSessionModalOpen(false);
+    setIsSettingsOpen(true); // Open settings for new session
+  };
+
+  const handleSelectSession = (session: TherapySession) => {
+    if (hasUnsavedChanges && currentSession) {
+      if (!confirm("저장하지 않은 변경사항이 있습니다. 계속하시겠습니까?")) {
+        return;
+      }
+    }
+    setCurrentSession(session);
+    setHasUnsavedChanges(false);
+    setIsMobileSidebarOpen(false); // Close sidebar on mobile after selection
+  };
+
+  const handleDuplicateSession = async (id: string) => {
+    const duplicated = await duplicateSession(id);
+    if (duplicated) {
+      setSessions((prev) => [duplicated, ...prev]);
+    }
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    await deleteSession(id);
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    if (currentSession?.id === id) {
+      setCurrentSession(null);
+      setHasUnsavedChanges(false);
+    }
+  };
+
+  const handleRenameSession = async (newName: string) => {
+    if (!currentSession) return;
+    const updated = await updateSession(currentSession.id, { name: newName });
+    if (updated) {
+      setCurrentSession(updated);
+      setSessions((prev) =>
+        prev.map((s) => (s.id === currentSession.id ? updated : s))
+      );
     }
   };
 
   const handleGenerate = async (newSettings: GameSettingsV2) => {
-    // Update settings state
-    setSettings(newSettings);
-
-    // Call the hook's generate function
+    if (!currentSession) return;
+    setCurrentSession((prev) =>
+      prev ? { ...prev, settings: newSettings } : null
+    );
     await generate(newSettings);
   };
 
   const handleDelete = (id: string) => {
-    setLocalItems(localItems.filter(item => item.id !== id));
+    if (!currentSession) return;
+    setCurrentSession((prev) =>
+      prev ? { ...prev, items: prev.items.filter((item) => item.id !== id) } : null
+    );
+    setHasUnsavedChanges(true);
   };
 
-  // TODO: Implement handleEdit with V2-specific edit modal
   const handleEdit = (item: TherapyItemV2) => {
-    console.log('Edit not yet implemented', item);
+    console.log("Edit not yet implemented", item);
   };
 
-  // TODO: Implement handlePlay with speech synthesis
   const handlePlay = (item: TherapyItemV2) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(item.text);
-      utterance.lang = settings.language === 'en' ? 'en-US' : 'ko-KR';
+      utterance.lang = currentSession?.settings.language === "en" ? "en-US" : "ko-KR";
       window.speechSynthesis.speak(utterance);
-    } else {
-      alert('이 브라우저에서는 음성 재생을 지원하지 않습니다.');
     }
   };
 
+  const handleReset = () => {
+    if (!currentSession) return;
+    if (confirm("모든 문장을 삭제하시겠습니까?")) {
+      setCurrentSession((prev) => (prev ? { ...prev, items: [] } : null));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-background text-foreground pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50/30 flex flex-col">
       <Header
         currentMode="list"
         onModeChange={() => {}}
-        onNewGame={() => setIsSettingsOpen(true)}
+        onNewGame={() => currentSession && setIsSettingsOpen(true)}
         isV2={true}
       />
-
-      {/* V2 Beta Badge */}
-      <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-center py-3 px-4 font-bold shadow-lg">
-        <span className="text-xl">🚀</span> V2 Beta - Enhanced Therapy Sentence Generator
-      </div>
 
       {/* Offline banner */}
       {!isOnline && (
@@ -151,124 +255,209 @@ export default function V2Page() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Warning message */}
-        {warning && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 font-medium flex items-center justify-between"
-          >
-            <span>⚠️ {warning}</span>
-            <button
-              onClick={clearWarning}
-              className="text-yellow-500 hover:text-yellow-700 font-bold"
-            >
-              ✕
-            </button>
-          </motion.div>
-        )}
-
-        <AnimatePresence mode="wait">
-          {loading ? (
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile sidebar overlay */}
+        <AnimatePresence>
+          {isMobileSidebarOpen && (
             <motion.div
-              key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20"
-            >
-              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-xl font-bold text-gray-500 animate-pulse mb-4">
-                문장을 만들고 있어요...
-              </p>
-              <button
-                onClick={cancelGenerate}
-                className="px-4 py-2 text-sm font-bold text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                취소
-              </button>
-            </motion.div>
-          ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20"
-            >
-              <div className="text-6xl mb-4">😢</div>
-              <p className="text-xl font-bold text-red-500 mb-4">{error}</p>
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors"
-              >
-                다시 시도하기
-              </button>
-            </motion.div>
-          ) : localItems.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20"
-            >
-              <div className="text-6xl mb-4">🎯</div>
-              <p className="text-xl font-bold text-gray-500 mb-4">
-                새로운 연습 문장을 만들어보세요
-              </p>
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors"
-              >
-                시작하기
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex justify-between items-center mb-6 px-2">
-                <h2 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
-                  <span className="text-3xl">📋</span> 연습 목록
-                </h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400 font-bold bg-white px-3 py-1 rounded-lg border border-gray-100 shadow-sm">
-                    총 {localItems.length}개
-                  </span>
-                  {localItems.length > 0 && (
-                    <button
-                      onClick={handleReset}
-                      className="px-3 py-1 text-sm font-bold text-red-500 bg-red-50 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
-                    >
-                      초기화
-                    </button>
-                  )}
-                </div>
-              </div>
-              <SentenceListV2
-                items={localItems}
-                onDelete={handleDelete}
-                onEdit={handleEdit}
-                onPlay={handlePlay}
-              />
-            </motion.div>
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
+            />
           )}
         </AnimatePresence>
+
+        {/* Sidebar - hidden on mobile, visible on desktop */}
+        <div className={`
+          fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          lg:transform-none
+        `}>
+          <SessionSidebar
+            sessions={sessions}
+            currentSessionId={currentSession?.id || null}
+            onSelectSession={handleSelectSession}
+            onNewSession={() => {
+              setIsNewSessionModalOpen(true);
+              setIsMobileSidebarOpen(false);
+            }}
+            onDuplicateSession={handleDuplicateSession}
+            onDeleteSession={handleDeleteSession}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          />
+        </div>
+
+        {/* Mobile menu button */}
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="fixed bottom-6 left-6 z-30 lg:hidden w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <line x1="9" x2="9" y1="3" y2="21"/>
+          </svg>
+        </button>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-5xl mx-auto px-6 py-8">
+            {currentSession ? (
+              <>
+                {/* Session Header */}
+                <SessionHeader
+                  session={currentSession}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  onSave={handleSaveSession}
+                  onDuplicate={() => handleDuplicateSession(currentSession.id)}
+                  onDelete={() => handleDeleteSession(currentSession.id)}
+                  onRename={handleRenameSession}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                />
+
+                {/* Warning message */}
+                {warning && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 font-medium flex items-center justify-between"
+                  >
+                    <span>⚠️ {warning}</span>
+                    <button
+                      onClick={clearWarning}
+                      className="text-yellow-500 hover:text-yellow-700 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Content Area */}
+                <div className="mt-6">
+                  <AnimatePresence mode="wait">
+                    {loading ? (
+                      <motion.div
+                        key="loader"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-20"
+                      >
+                        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-xl font-bold text-gray-500 animate-pulse mb-4">
+                          문장을 만들고 있어요...
+                        </p>
+                        <button
+                          onClick={cancelGenerate}
+                          className="px-4 py-2 text-sm font-bold text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          취소
+                        </button>
+                      </motion.div>
+                    ) : error ? (
+                      <motion.div
+                        key="error"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-20"
+                      >
+                        <div className="text-6xl mb-4">😢</div>
+                        <p className="text-xl font-bold text-red-500 mb-4">{error}</p>
+                        <button
+                          onClick={() => setIsSettingsOpen(true)}
+                          className="px-6 py-3 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-colors"
+                        >
+                          다시 시도하기
+                        </button>
+                      </motion.div>
+                    ) : currentSession.items.length === 0 ? (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-20"
+                      >
+                        <div className="text-6xl mb-4">🎯</div>
+                        <p className="text-xl font-bold text-gray-500 mb-4">
+                          문장을 생성해보세요
+                        </p>
+                        <button
+                          onClick={() => setIsSettingsOpen(true)}
+                          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg transition-all"
+                        >
+                          문장 생성하기
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
+                            📋 생성된 문장
+                            <span className="text-sm font-normal text-gray-400 bg-white px-2 py-1 rounded-lg">
+                              {currentSession.items.length}개
+                            </span>
+                          </h2>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setIsSettingsOpen(true)}
+                              className="px-4 py-2 text-sm font-bold text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                            >
+                              + 더 생성하기
+                            </button>
+                            <button
+                              onClick={handleReset}
+                              className="px-4 py-2 text-sm font-bold text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              초기화
+                            </button>
+                          </div>
+                        </div>
+                        <SentenceListV2
+                          items={currentSession.items}
+                          onDelete={handleDelete}
+                          onEdit={handleEdit}
+                          onPlay={handlePlay}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            ) : (
+              <EmptyState
+                onNewSession={() => setIsNewSessionModalOpen(true)}
+                hasExistingSessions={sessions.length > 0}
+              />
+            )}
+          </div>
+        </main>
       </div>
 
-      {/* V2 Settings Panel */}
-      <SettingsPanelV2
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onGenerate={handleGenerate}
-        initialSettings={settings}
+      {/* Modals */}
+      <NewSessionModal
+        isOpen={isNewSessionModalOpen}
+        onClose={() => setIsNewSessionModalOpen(false)}
+        onCreate={handleCreateSession}
       />
-    </main>
+
+      {currentSession && (
+        <SettingsPanelV2
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          onGenerate={handleGenerate}
+          initialSettings={currentSession.settings}
+        />
+      )}
+    </div>
   );
 }

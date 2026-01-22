@@ -87,20 +87,18 @@ async def generate_candidates(
     prompt = build_generation_prompt(request, batch_size)
     client = _get_client()
 
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant that generates therapy sentences.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.8,
+    # GPT-5.2는 Responses API 사용, reasoning effort로 응답 품질 조절
+    # 문장 생성은 창의적 작업이므로 low effort로 빠른 응답 유도
+    system_prompt = "You are a helpful assistant that generates therapy sentences. Always respond in valid JSON format."
+
+    response = await client.responses.create(
+        model="gpt-5.2",
+        input=f"{system_prompt}\n\n{prompt}",
+        reasoning={"effort": "low"},
+        text={"format": {"type": "json_object"}},
     )
 
-    content = response.choices[0].message.content
+    content = response.output_text
     if not content:
         return []
 

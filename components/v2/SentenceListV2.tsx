@@ -24,12 +24,11 @@ export default function SentenceListV2({
   onEdit,
   onPlay,
 }: SentenceListV2Props) {
-  const showContrastSets =
-    (therapyApproach === "minimal_pairs" || therapyApproach === "maximal_oppositions") &&
-    contrastSets &&
-    contrastSets.length > 0;
+  // Note: contrastSets display is disabled - minimal_pairs/maximal_oppositions
+  // are planned for a separate word-pair discrimination mode
+  const showContrastSets = false;
 
-  if (showContrastSets) {
+  if (showContrastSets && contrastSets) {
     return <ContrastSetList sets={contrastSets} language={language} />;
   }
 

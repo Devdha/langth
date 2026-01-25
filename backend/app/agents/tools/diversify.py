@@ -46,6 +46,10 @@ def diversify_results(
     pattern_counts: dict[str, int] = defaultdict(int)
     start_counts: dict[str, int] = defaultdict(int)
     ending_counts: dict[str, int] = defaultdict(int)
+    difficulty_counts: dict[str, int] = defaultdict(int)
+
+    # 난이도별 목표 개수 계산 (균등 분배)
+    target_per_difficulty = count // 3 if count >= 3 else 1
 
     # 후보별 다양성 키 사전 계산
     candidate_keys = []
@@ -55,6 +59,7 @@ def diversify_results(
                 "pattern": _get_pattern(sentence),
                 "start": _get_start_key(sentence),
                 "ending": _get_ending_key(sentence),
+                "difficulty": sentence.difficulty or "unknown",
             }
         )
 
@@ -76,6 +81,12 @@ def diversify_results(
                 start_counts[keys["start"]] * 3
                 + ending_counts[keys["ending"]] * 4
             )
+
+            # 난이도 균형 페널티: 목표를 초과하면 큰 페널티
+            diff_count = difficulty_counts[keys["difficulty"]]
+            if diff_count >= target_per_difficulty:
+                penalty += (diff_count - target_per_difficulty + 1) * 10
+
             adjusted_score = sentence.score - penalty
 
             if best_idx is None or adjusted_score > best_adjusted_score:
@@ -92,6 +103,7 @@ def diversify_results(
         pattern_counts[keys["pattern"]] += 1
         start_counts[keys["start"]] += 1
         ending_counts[keys["ending"]] += 1
+        difficulty_counts[keys["difficulty"]] += 1
 
     # 부족하면 남은 것 중 추가
     if len(selected) < count:

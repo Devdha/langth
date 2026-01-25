@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star } from "lucide-react";
-import { GameSettingsV2, LanguageV2, CommunicativeFunction } from "@/types/v2";
-import DiagnosisSelector from "./DiagnosisSelector";
+import { X, ChevronDown, Check } from "lucide-react";
+import { GameSettingsV2, LanguageV2, CommunicativeFunction, DiagnosisType, TherapyApproach } from "@/types/v2";
 import PhonemeSelector from "./PhonemeSelector";
 
 interface SettingsPanelV2Props {
@@ -14,36 +13,38 @@ interface SettingsPanelV2Props {
   initialSettings?: GameSettingsV2;
 }
 
-const THEMES = [
-  { id: '', label: '없음', icon: '✨', color: 'bg-gray-400' },
-  { id: 'daily', label: '일상', icon: '🏠', color: 'bg-info' },
-  { id: 'food', label: '음식', icon: '🍽️', color: 'bg-success' },
-  { id: 'animal', label: '동물', icon: '🐶', color: 'bg-warning' },
-  { id: 'family', label: '가족', icon: '👨‍👩‍👧', color: 'bg-purple-500' },
-];
-
-const COMMUNICATIVE_FUNCTIONS = [
-  { id: null, label: '없음', icon: '✨', desc: 'None' },
-  { id: 'request' as const, label: '요청', icon: '🙋', desc: 'Request' },
-  { id: 'reject' as const, label: '거절', icon: '🚫', desc: 'Reject' },
-  { id: 'help' as const, label: '도움', icon: '🆘', desc: 'Help' },
-  { id: 'choice' as const, label: '선택', icon: '🤔', desc: 'Choice' },
-  { id: 'attention' as const, label: '주목', icon: '👋', desc: 'Attention' },
-  { id: 'question' as const, label: '질문', icon: '❓', desc: 'Question' },
-];
-
-const COUNTS = [5, 10, 15, 20];
 const LANGUAGES = [
   { id: 'ko' as const, label: '한국어', icon: '🇰🇷' },
   { id: 'en' as const, label: 'English', icon: '🇺🇸' },
 ];
-const AGES = [
-  { id: 3, label: '만 3세', desc: '기본 어휘' },
-  { id: 4, label: '만 4세', desc: '일상 어휘' },
-  { id: 5, label: '만 5세', desc: '확장 어휘' },
-  { id: 6, label: '만 6세', desc: '학령기 준비' },
-  { id: 7, label: '만 7세', desc: '초등 저학년' },
+
+// Note: minimal_pairs and maximal_oppositions are planned for a separate word-pair discrimination mode
+const THERAPY_APPROACHES = [
+  {
+    id: 'complexity' as const,
+    label: '복잡성 접근',
+    desc: '목표 음소가 포함된 문장 생성 (난이도별)',
+    category: 'SSD 치료',
+    defaultDiagnosis: 'SSD' as const,
+  },
+  {
+    id: 'core_vocabulary' as const,
+    label: '핵심어휘',
+    desc: '고빈도 기능어 중심 문장',
+    category: 'ASD/LD 치료',
+    defaultDiagnosis: 'ASD' as const,
+  },
 ];
+
+const AGES = [
+  { id: 3, label: '만 3세' },
+  { id: 4, label: '만 4세' },
+  { id: 5, label: '만 5세' },
+  { id: 6, label: '만 6세' },
+  { id: 7, label: '만 7세' },
+];
+
+const COUNTS = [3, 5, 10, 15, 20];
 
 export default function SettingsPanelV2({
   isOpen,
@@ -51,26 +52,72 @@ export default function SettingsPanelV2({
   onGenerate,
   initialSettings
 }: SettingsPanelV2Props) {
-  const [diagnosis, setDiagnosis] = useState(initialSettings?.diagnosis || 'SSD');
-  const [therapyApproach, setTherapyApproach] = useState(initialSettings?.therapyApproach || 'minimal_pairs');
+  // Form state
+  const [language, setLanguage] = useState<LanguageV2>(initialSettings?.language || 'ko');
+  const [therapyApproach, setTherapyApproach] = useState<TherapyApproach>(initialSettings?.therapyApproach || 'complexity');
+  const [diagnosis, setDiagnosis] = useState<DiagnosisType>(initialSettings?.diagnosis || 'SSD');
   const [phoneme, setPhoneme] = useState(initialSettings?.target?.phoneme || 'ㄹ');
   const [position, setPosition] = useState(initialSettings?.target?.position || 'onset');
   const [minOccurrences, setMinOccurrences] = useState(initialSettings?.target?.minOccurrences || 1);
   const [sentenceLength, setSentenceLength] = useState(initialSettings?.sentenceLength || 3);
-  const [theme, setTheme] = useState(initialSettings?.theme || '');
-  const [communicativeFunction, setCommunicativeFunction] = useState<CommunicativeFunction | null>(
-    initialSettings?.communicativeFunction || null
-  );
   const [age, setAge] = useState<3 | 4 | 5 | 6 | 7>(initialSettings?.age || 4);
-  const [language, setLanguage] = useState<LanguageV2>(initialSettings?.language || 'ko');
   const [count, setCount] = useState(initialSettings?.count || 10);
+
+  // Step tracking - which steps are "confirmed"
+  const [confirmedSteps, setConfirmedSteps] = useState<Set<number>>(new Set());
+
+  // Current visible step (auto-expands next unconfirmed step)
+  const [expandedStep, setExpandedStep] = useState(1);
+
+  // Reset when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmedSteps(new Set());
+      setExpandedStep(1);
+    }
+  }, [isOpen]);
+
+  const confirmStep = (step: number) => {
+    setConfirmedSteps(prev => new Set([...prev, step]));
+    // Auto-expand next step
+    if (step < 5) {
+      setExpandedStep(step + 1);
+    }
+  };
+
+  const handleLanguageSelect = (lang: LanguageV2) => {
+    setLanguage(lang);
+    // Reset phoneme when language changes
+    setPhoneme(lang === 'ko' ? 'ㄹ' : 'R');
+    confirmStep(1);
+  };
+
+  const handleApproachSelect = (approach: TherapyApproach) => {
+    setTherapyApproach(approach);
+    const config = THERAPY_APPROACHES.find(a => a.id === approach);
+    if (config) {
+      setDiagnosis(config.defaultDiagnosis);
+    }
+    confirmStep(2);
+    // 핵심어휘는 음소 선택이 필요 없으므로 Step 3도 자동 확인
+    if (approach === 'core_vocabulary') {
+      confirmStep(3);
+    }
+  };
+
+  const handlePhonemeConfirm = () => {
+    confirmStep(3);
+  };
+
+  const handleDetailsConfirm = () => {
+    confirmStep(4);
+  };
 
   const handleGenerate = () => {
     const settings: GameSettingsV2 = {
       language,
       age,
       count,
-      // core_vocabulary doesn't need target (phoneme config)
       ...(therapyApproach !== 'core_vocabulary'
         ? {
             target: {
@@ -83,274 +130,334 @@ export default function SettingsPanelV2({
       sentenceLength,
       diagnosis,
       therapyApproach,
-      theme,
-      communicativeFunction,
+      theme: '',
+      communicativeFunction: null,
     };
     onGenerate(settings);
     onClose();
   };
 
+  const isStepVisible = (step: number) => {
+    if (step === 1) return true;
+    return confirmedSteps.has(step - 1);
+  };
+
+  const isStepConfirmed = (step: number) => confirmedSteps.has(step);
+
+  const StepHeader = ({ step, title, isExpanded, onToggle, confirmed }: {
+    step: number;
+    title: string;
+    isExpanded: boolean;
+    onToggle: () => void;
+    confirmed: boolean;
+  }) => (
+    <button
+      onClick={onToggle}
+      className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${
+        confirmed
+          ? 'bg-green-50 border-2 border-green-200'
+          : isExpanded
+            ? 'bg-purple-50 border-2 border-purple-300'
+            : 'bg-gray-50 border-2 border-gray-100 hover:border-gray-200'
+      }`}
+    >
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+        confirmed
+          ? 'bg-green-500 text-white'
+          : isExpanded
+            ? 'bg-purple-500 text-white'
+            : 'bg-gray-300 text-white'
+      }`}>
+        {confirmed ? <Check size={16} /> : step}
+      </div>
+      <span className={`flex-1 text-left font-bold ${confirmed ? 'text-green-700' : 'text-gray-700'}`}>
+        {title}
+      </span>
+      <ChevronDown
+        size={20}
+        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+      />
+    </button>
+  );
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border-4 border-purple-500/20"
-            >
-              <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-6 flex justify-between items-center border-b-2 border-purple-500/10">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <span className="text-3xl">⚙️</span> V2 설정하기
-                </h2>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-black/5 rounded-full transition-colors"
-                >
-                  <X size={24} className="text-gray-500" />
-                </button>
-              </div>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-5 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                ✨ 문장 만들기
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
 
-              <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            {/* Steps */}
+            <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
 
-                {/* Section 1: Diagnosis & Therapy Approach */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm">1</span>
-                    진단군 및 접근법
-                  </h3>
-                  <DiagnosisSelector
-                    diagnosis={diagnosis}
-                    therapyApproach={therapyApproach}
-                    onDiagnosisChange={setDiagnosis}
-                    onApproachChange={setTherapyApproach}
-                  />
-                </section>
-
-                {/* Section 2: Target Phoneme OR Core Vocabulary Info */}
-                {therapyApproach === 'core_vocabulary' ? (
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">2</span>
-                      핵심 어휘
-                    </h3>
-                    <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-100">
-                      <p className="text-gray-700 mb-4">
-                        <span className="font-bold text-pink-600">핵심어휘 접근법</span>은 기능적 의사소통에 집중합니다.
-                        음소 목표 대신 아래 핵심 단어들을 자연스럽게 사용하는 문장을 생성합니다.
-                      </p>
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {(language === 'ko'
-                          ? ['더', '또', '아니', '네', '싫어', '줘', '이거', '저거', '뭐', '어디']
-                          : ['more', 'want', 'no', 'yes', 'help', 'go', 'stop', 'my', 'that', 'what']
-                        ).map((word) => (
-                          <span
-                            key={word}
-                            className="px-4 py-2 bg-white rounded-full text-pink-600 font-bold shadow-sm border border-pink-200"
+              {/* Step 1: Language */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <StepHeader
+                  step={1}
+                  title={isStepConfirmed(1) ? `언어: ${language === 'ko' ? '한국어 🇰🇷' : 'English 🇺🇸'}` : '언어 선택'}
+                  isExpanded={expandedStep === 1}
+                  onToggle={() => setExpandedStep(expandedStep === 1 ? 0 : 1)}
+                  confirmed={isStepConfirmed(1)}
+                />
+                <AnimatePresence>
+                  {expandedStep === 1 && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-4 flex gap-3 justify-center">
+                        {LANGUAGES.map((l) => (
+                          <button
+                            key={l.id}
+                            onClick={() => handleLanguageSelect(l.id)}
+                            className={`flex-1 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
+                              language === l.id
+                                ? 'bg-purple-500 text-white shadow-lg'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
                           >
-                            {word}
-                          </span>
+                            <span className="text-2xl">{l.icon}</span>
+                            <span>{l.label}</span>
+                          </button>
                         ))}
                       </div>
-                    </div>
-                  </section>
-                ) : (
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">2</span>
-                      목표 음소
-                    </h3>
-                    <PhonemeSelector
-                      language={language}
-                      phoneme={phoneme}
-                      position={position}
-                      minOccurrences={minOccurrences}
-                      onPhonemeChange={setPhoneme}
-                      onPositionChange={setPosition}
-                      onMinOccurrencesChange={setMinOccurrences}
-                    />
-                  </section>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
-                {/* Section 3: Sentence Length */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm">3</span>
-                    문장 길이 (어절)
-                  </h3>
-                  <div className="flex gap-4 justify-center">
-                    {[2, 3, 4, 5, 6].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setSentenceLength(n)}
-                        className={`w-14 h-14 rounded-full text-xl font-bold transition-all transform hover:scale-110 active:scale-90 flex items-center justify-center ${
-                          sentenceLength === n
-                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 ring-4 ring-indigo-500/20'
-                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Section 4: Theme & Communicative Function */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-sm">4</span>
-                    주제 및 의사소통 기능
-                  </h3>
-
-                  {/* Theme */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-bold text-gray-600 mb-3">주제</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {THEMES.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => setTheme(t.id)}
-                          className={`p-3 rounded-2xl border-2 transition-all text-center relative overflow-hidden group ${
-                            theme === t.id
-                              ? 'border-transparent ring-4 ring-opacity-50'
-                              : 'border-gray-100 hover:border-gray-200 bg-white'
-                          } ${theme === t.id ? 'ring-' + t.color.replace('bg-', '') : ''}`}
-                        >
-                          <div className={`absolute inset-0 opacity-10 ${t.color}`} />
-                          {theme === t.id && (
-                            <div className={`absolute inset-0 opacity-20 ${t.color}`} />
-                          )}
-                          <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">{t.icon}</div>
-                          <div className="font-bold text-gray-700 text-xs">{t.label}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Communicative Function */}
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-600 mb-3">의사소통 기능</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {COMMUNICATIVE_FUNCTIONS.map((f) => (
-                        <button
-                          key={f.id || 'none'}
-                          onClick={() => setCommunicativeFunction(f.id)}
-                          className={`p-3 rounded-xl border-2 transition-all text-center ${
-                            communicativeFunction === f.id
-                              ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200'
-                              : 'border-gray-100 hover:border-gray-200 bg-white'
-                          }`}
-                        >
-                          <div className="text-xl mb-1">{f.icon}</div>
-                          <div className="font-bold text-gray-700 text-xs">{f.label}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section 5: Age & Language */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm">5</span>
-                    연령 및 언어
-                  </h3>
-
-                  {/* Age */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-bold text-gray-600 mb-3">연령</h4>
-                    <div className="flex flex-wrap gap-3 justify-center">
-                      {AGES.map((a) => (
-                        <button
-                          key={a.id}
-                          onClick={() => setAge(a.id as 3 | 4 | 5 | 6 | 7)}
-                          className={`px-4 py-3 rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center ${
-                            age === a.id
-                              ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 ring-4 ring-orange-500/20'
-                              : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          <span>{a.label}</span>
-                          <span className={`text-xs ${age === a.id ? 'text-orange-100' : 'text-gray-400'}`}>{a.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Language */}
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-600 mb-3">언어</h4>
-                    <div className="flex gap-4 justify-center">
-                      {LANGUAGES.map((l) => (
-                        <button
-                          key={l.id}
-                          onClick={() => setLanguage(l.id)}
-                          className={`px-6 py-3 rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 ${
-                            language === l.id
-                              ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 ring-4 ring-indigo-500/20'
-                              : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          <span className="text-xl">{l.icon}</span>
-                          {l.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section 6: Count */}
-                <section>
-                  <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-sm">6</span>
-                    생성 개수
-                  </h3>
-                  <div className="flex gap-4 justify-center">
-                    {COUNTS.map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setCount(n)}
-                        className={`w-14 h-14 rounded-full text-lg font-bold transition-all transform hover:scale-110 active:scale-90 flex items-center justify-center ${
-                          count === n
-                            ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30 ring-4 ring-pink-500/20'
-                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-              </div>
-
-              <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-                <button
-                  onClick={onClose}
-                  className="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+              {/* Step 2: Therapy Approach */}
+              {isStepVisible(2) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  취소
-                </button>
-                <button
-                  onClick={handleGenerate}
-                  className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg hover:shadow-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center gap-2"
+                  <StepHeader
+                    step={2}
+                    title={isStepConfirmed(2) ? `접근법: ${THERAPY_APPROACHES.find(a => a.id === therapyApproach)?.label}` : '치료 접근법'}
+                    isExpanded={expandedStep === 2}
+                    onToggle={() => setExpandedStep(expandedStep === 2 ? 0 : 2)}
+                    confirmed={isStepConfirmed(2)}
+                  />
+                  <AnimatePresence>
+                    {expandedStep === 2 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pt-4 space-y-2">
+                          {THERAPY_APPROACHES.map((a) => (
+                            <button
+                              key={a.id}
+                              onClick={() => handleApproachSelect(a.id)}
+                              className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
+                                therapyApproach === a.id
+                                  ? 'border-purple-500 bg-purple-50'
+                                  : 'border-gray-100 hover:border-gray-200 bg-white'
+                              }`}
+                            >
+                              <div className="font-bold text-gray-800">{a.label}</div>
+                              <div className="text-xs text-gray-500">{a.desc}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* Step 3: Target Phoneme (only for non-core_vocabulary) */}
+              {isStepVisible(3) && therapyApproach !== 'core_vocabulary' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  <Star className="fill-white" size={20} />
-                  문장 만들기
-                </button>
-              </div>
-            </motion.div>
+                  <StepHeader
+                    step={3}
+                    title={isStepConfirmed(3) ? `목표 음소: ${phoneme}` : '목표 음소'}
+                    isExpanded={expandedStep === 3}
+                    onToggle={() => setExpandedStep(expandedStep === 3 ? 0 : 3)}
+                    confirmed={isStepConfirmed(3)}
+                  />
+                  <AnimatePresence>
+                    {expandedStep === 3 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pt-4 space-y-4">
+                          <PhonemeSelector
+                            language={language}
+                            phoneme={phoneme}
+                            position={position}
+                            minOccurrences={minOccurrences}
+                            onPhonemeChange={setPhoneme}
+                            onPositionChange={setPosition}
+                            onMinOccurrencesChange={setMinOccurrences}
+                          />
+                          <button
+                            onClick={handlePhonemeConfirm}
+                            className="w-full py-2 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-colors"
+                          >
+                            다음
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* Step 4: Details (Length, Age, Count) - shows as step 3 for core_vocabulary */}
+              {isStepVisible(4) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <StepHeader
+                    step={therapyApproach === 'core_vocabulary' ? 3 : 4}
+                    title={isStepConfirmed(4) ? `${sentenceLength}어절, ${age}세, ${count}개` : '세부 설정'}
+                    isExpanded={expandedStep === 4}
+                    onToggle={() => setExpandedStep(expandedStep === 4 ? 0 : 4)}
+                    confirmed={isStepConfirmed(4)}
+                  />
+                  <AnimatePresence>
+                    {expandedStep === 4 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pt-4 space-y-5">
+                          {/* Sentence Length */}
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-600 mb-2">문장 길이</h4>
+                            <div className="flex gap-2 justify-center">
+                              {[2, 3, 4, 5, 6].map((n) => (
+                                <button
+                                  key={n}
+                                  onClick={() => setSentenceLength(n)}
+                                  className={`w-12 h-12 rounded-full font-bold transition-all ${
+                                    sentenceLength === n
+                                      ? 'bg-teal-500 text-white shadow-lg'
+                                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Age */}
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-600 mb-2">대상 연령</h4>
+                            <div className="flex gap-2 justify-center flex-wrap">
+                              {AGES.map((a) => (
+                                <button
+                                  key={a.id}
+                                  onClick={() => setAge(a.id as 3 | 4 | 5 | 6 | 7)}
+                                  className={`px-3 py-2 rounded-xl font-bold transition-all ${
+                                    age === a.id
+                                      ? 'bg-orange-500 text-white shadow-lg'
+                                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {a.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Count */}
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-600 mb-2">생성 개수</h4>
+                            <div className="flex gap-2 justify-center">
+                              {COUNTS.map((c) => (
+                                <button
+                                  key={c}
+                                  onClick={() => setCount(c)}
+                                  className={`w-12 h-12 rounded-full font-bold transition-all ${
+                                    count === c
+                                      ? 'bg-pink-500 text-white shadow-lg'
+                                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {c}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleDetailsConfirm}
+                            className="w-full py-2 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-colors"
+                          >
+                            다음
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* Generate Button */}
+              {isStepConfirmed(4) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="pt-4"
+                >
+                  <button
+                    onClick={handleGenerate}
+                    className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    ✨ 문장 생성하기
+                  </button>
+                </motion.div>
+              )}
+            </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

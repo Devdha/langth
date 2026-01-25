@@ -1,0 +1,540 @@
+{
+  "metadata": {
+    "version": "2.1.0",
+    "description": "한국어 최소대립쌍/최대대립 단어 DB - 조음음운치료용 (아동 친화적 정제 버전)",
+    "sources": [
+      "한국어 음소 최소대립쌍의 계량언어학적 연구 (2019)",
+      "만치(themanchi.com) 조음치료 자료",
+      "국립국어원 우리말샘",
+      "Communication Sciences and Disorders (e-csd.org)",
+      "한국언어치료학회"
+    ],
+    "lastUpdated": "2026-01-25",
+    "totalPairs": 150,
+    "categories": [
+      "aspirationContrast (기식성)",
+      "tensionContrast (긴장성)",
+      "placeContrast (조음위치)",
+      "mannerContrast (조음방법)",
+      "finalConsonant (종성)",
+      "vowelContrast (모음)"
+    ],
+    "notes": "외래어, 추상적 단어, 아동이 이해하기 어려운 단어 제외"
+  },
+
+  "minimalPairs": {
+    "_description": "최소대립쌍: 한 가지 음운 자질만 다른 단어 쌍",
+
+    "aspirationContrast": {
+      "_description": "평음-격음 대립 (기식성)",
+
+      "ㅂ-ㅍ": {
+        "feature": "기식성",
+        "place": "양순음",
+        "pairs": [
+          {"word1": "발", "word2": "팔", "meaning1": "발", "meaning2": "팔"},
+          {"word1": "불", "word2": "풀", "meaning1": "불", "meaning2": "풀"},
+          {"word1": "배", "word2": "패", "meaning1": "배(과일/몸)", "meaning2": "지다"},
+          {"word1": "벌", "word2": "펄", "meaning1": "벌(곤충)", "meaning2": "펄(뻘)"},
+          {"word1": "바다", "word2": "파다", "meaning1": "바다", "meaning2": "파다"},
+          {"word1": "비", "word2": "피", "meaning1": "비", "meaning2": "피"},
+          {"word1": "반", "word2": "판", "meaning1": "반", "meaning2": "판"},
+          {"word1": "밤", "word2": "팜", "meaning1": "밤", "meaning2": "야자"},
+          {"word1": "바리", "word2": "파리", "meaning1": "바리", "meaning2": "파리(곤충)"}
+        ]
+      },
+
+      "ㄷ-ㅌ": {
+        "feature": "기식성",
+        "place": "치조음",
+        "pairs": [
+          {"word1": "달", "word2": "탈", "meaning1": "달", "meaning2": "탈(가면)"},
+          {"word1": "돌", "word2": "톨", "meaning1": "돌", "meaning2": "톨(알)"},
+          {"word1": "덕", "word2": "턱", "meaning1": "덕", "meaning2": "턱"},
+          {"word1": "대", "word2": "태", "meaning1": "대나무", "meaning2": "태어남"},
+          {"word1": "담", "word2": "탐", "meaning1": "담(벽)", "meaning2": "탐(욕심)"},
+          {"word1": "당", "word2": "탕", "meaning1": "당", "meaning2": "탕(국)"},
+          {"word1": "도끼", "word2": "토끼", "meaning1": "도끼", "meaning2": "토끼"}
+        ]
+      },
+
+      "ㄱ-ㅋ": {
+        "feature": "기식성",
+        "place": "연구개음",
+        "pairs": [
+          {"word1": "감", "word2": "캄", "meaning1": "감(과일)", "meaning2": "캄캄"},
+          {"word1": "칼", "word2": "갈", "meaning1": "칼", "meaning2": "갈다"},
+          {"word1": "콩", "word2": "공", "meaning1": "콩", "meaning2": "공"},
+          {"word1": "코", "word2": "고", "meaning1": "코", "meaning2": "높다"},
+          {"word1": "겁", "word2": "컵", "meaning1": "겁", "meaning2": "컵"},
+          {"word1": "기", "word2": "키", "meaning1": "기운", "meaning2": "키"}
+        ]
+      },
+
+      "ㅈ-ㅊ": {
+        "feature": "기식성",
+        "place": "경구개음",
+        "pairs": [
+          {"word1": "자", "word2": "차", "meaning1": "자(도구)", "meaning2": "차"},
+          {"word1": "잠", "word2": "참", "meaning1": "잠", "meaning2": "참다"},
+          {"word1": "장", "word2": "창", "meaning1": "장", "meaning2": "창문"},
+          {"word1": "짐", "word2": "침", "meaning1": "짐", "meaning2": "침"},
+          {"word1": "집", "word2": "칩", "meaning1": "집", "meaning2": "칩"},
+          {"word1": "전", "word2": "천", "meaning1": "전", "meaning2": "천"},
+          {"word1": "조", "word2": "초", "meaning1": "조각", "meaning2": "초"},
+          {"word1": "주", "word2": "추", "meaning1": "주", "meaning2": "추석"}
+        ]
+      },
+
+      "ㅅ-ㅎ": {
+        "feature": "기식성",
+        "place": "마찰음",
+        "pairs": [
+          {"word1": "살", "word2": "할", "meaning1": "살", "meaning2": "하다"},
+          {"word1": "손", "word2": "혼", "meaning1": "손", "meaning2": "혼"},
+          {"word1": "산", "word2": "한", "meaning1": "산", "meaning2": "하나"},
+          {"word1": "새", "word2": "해", "meaning1": "새", "meaning2": "해"},
+          {"word1": "소", "word2": "호", "meaning1": "소", "meaning2": "호랑이"},
+          {"word1": "심", "word2": "힘", "meaning1": "마음", "meaning2": "힘"}
+        ]
+      }
+    },
+
+    "tensionContrast": {
+      "_description": "평음-경음 대립 (긴장성)",
+
+      "ㅂ-ㅃ": {
+        "feature": "긴장성",
+        "place": "양순음",
+        "pairs": [
+          {"word1": "불", "word2": "뿔", "meaning1": "불", "meaning2": "뿔"},
+          {"word1": "발", "word2": "빨", "meaning1": "발", "meaning2": "빨다"},
+          {"word1": "배", "word2": "빼", "meaning1": "배", "meaning2": "빼다"},
+          {"word1": "반", "word2": "빤", "meaning1": "반", "meaning2": "반짝"},
+          {"word1": "밤", "word2": "빰", "meaning1": "밤", "meaning2": "뺨"},
+          {"word1": "비", "word2": "삐", "meaning1": "비", "meaning2": "삐"}
+        ]
+      },
+
+      "ㄷ-ㄸ": {
+        "feature": "긴장성",
+        "place": "치조음",
+        "pairs": [
+          {"word1": "달", "word2": "딸", "meaning1": "달", "meaning2": "딸"},
+          {"word1": "덕", "word2": "떡", "meaning1": "덕", "meaning2": "떡"},
+          {"word1": "담", "word2": "땀", "meaning1": "담", "meaning2": "땀"},
+          {"word1": "대", "word2": "때", "meaning1": "대", "meaning2": "때"},
+          {"word1": "다", "word2": "따", "meaning1": "다", "meaning2": "따다"},
+          {"word1": "도", "word2": "또", "meaning1": "도", "meaning2": "또"}
+        ]
+      },
+
+      "ㄱ-ㄲ": {
+        "feature": "긴장성",
+        "place": "연구개음",
+        "pairs": [
+          {"word1": "굴", "word2": "꿀", "meaning1": "굴", "meaning2": "꿀"},
+          {"word1": "공", "word2": "꽁", "meaning1": "공", "meaning2": "꽁꽁"},
+          {"word1": "감", "word2": "깜", "meaning1": "감", "meaning2": "깜깜"},
+          {"word1": "가", "word2": "까", "meaning1": "가다", "meaning2": "까다"},
+          {"word1": "강", "word2": "깡", "meaning1": "강", "meaning2": "깡"},
+          {"word1": "고", "word2": "꼬", "meaning1": "고", "meaning2": "꼬다"},
+          {"word1": "국", "word2": "꾹", "meaning1": "국", "meaning2": "꾹"},
+          {"word1": "기", "word2": "끼", "meaning1": "기", "meaning2": "끼"}
+        ]
+      },
+
+      "ㅅ-ㅆ": {
+        "feature": "긴장성",
+        "place": "치조마찰음",
+        "pairs": [
+          {"word1": "살", "word2": "쌀", "meaning1": "살", "meaning2": "쌀"},
+          {"word1": "서", "word2": "써", "meaning1": "서다", "meaning2": "쓰다"},
+          {"word1": "시", "word2": "씨", "meaning1": "시", "meaning2": "씨"},
+          {"word1": "사", "word2": "싸", "meaning1": "사다", "meaning2": "싸다"},
+          {"word1": "상", "word2": "쌍", "meaning1": "상", "meaning2": "쌍"},
+          {"word1": "손", "word2": "쏜", "meaning1": "손", "meaning2": "쏘다"},
+          {"word1": "수", "word2": "쑤", "meaning1": "수", "meaning2": "쑤시다"}
+        ]
+      },
+
+      "ㅈ-ㅉ": {
+        "feature": "긴장성",
+        "place": "경구개음",
+        "pairs": [
+          {"word1": "자다", "word2": "짜다", "meaning1": "자다", "meaning2": "짜다"},
+          {"word1": "장", "word2": "짱", "meaning1": "장", "meaning2": "짱"},
+          {"word1": "조", "word2": "쪼", "meaning1": "조", "meaning2": "쪼다"},
+          {"word1": "지다", "word2": "찌다", "meaning1": "지다", "meaning2": "찌다"}
+        ]
+      }
+    },
+
+    "placeContrast": {
+      "_description": "조음 위치 대립",
+
+      "ㄷ-ㄱ": {
+        "_description": "치조음-연구개음 대립 (전방화/후방화 오류 타겟)",
+        "feature": "조음위치",
+        "pairs": [
+          {"word1": "둘", "word2": "굴", "meaning1": "둘", "meaning2": "굴"},
+          {"word1": "돛", "word2": "꽃", "meaning1": "돛", "meaning2": "꽃"},
+          {"word1": "통", "word2": "콩", "meaning1": "통", "meaning2": "콩"},
+          {"word1": "탈", "word2": "칼", "meaning1": "탈", "meaning2": "칼"},
+          {"word1": "도마", "word2": "꼬마", "meaning1": "도마", "meaning2": "꼬마"},
+          {"word1": "다리", "word2": "가리", "meaning1": "다리", "meaning2": "가리다"}
+        ]
+      },
+
+      "ㅂ-ㄷ": {
+        "_description": "양순음-치조음 대립",
+        "feature": "조음위치",
+        "pairs": [
+          {"word1": "발", "word2": "달", "meaning1": "발", "meaning2": "달"},
+          {"word1": "밤", "word2": "담", "meaning1": "밤", "meaning2": "담"},
+          {"word1": "벌", "word2": "덜", "meaning1": "벌", "meaning2": "덜"},
+          {"word1": "배", "word2": "대", "meaning1": "배", "meaning2": "대"}
+        ]
+      },
+
+      "ㅂ-ㄱ": {
+        "_description": "양순음-연구개음 대립",
+        "feature": "조음위치",
+        "pairs": [
+          {"word1": "밤", "word2": "감", "meaning1": "밤", "meaning2": "감"},
+          {"word1": "발", "word2": "갈", "meaning1": "발", "meaning2": "갈다"},
+          {"word1": "보", "word2": "고", "meaning1": "보다", "meaning2": "높다"}
+        ]
+      }
+    },
+
+    "mannerContrast": {
+      "_description": "조음 방법 대립",
+
+      "ㅅ-ㅈ": {
+        "_description": "마찰음-파찰음 대립 (가장 빈번한 최소대립쌍 - 연구 결과 1위)",
+        "feature": "조음방법",
+        "note": "연구에 따르면 ㅅ-ㅈ가 한국어에서 가장 많은 최소대립쌍을 형성함",
+        "pairs": [
+          {"word1": "사", "word2": "자", "meaning1": "네", "meaning2": "자"},
+          {"word1": "소", "word2": "조", "meaning1": "소", "meaning2": "조각"},
+          {"word1": "상", "word2": "장", "meaning1": "상", "meaning2": "장"},
+          {"word1": "상어", "word2": "장어", "meaning1": "상어", "meaning2": "장어"},
+          {"word1": "의사", "word2": "의자", "meaning1": "의사", "meaning2": "의자"},
+          {"word1": "시", "word2": "지", "meaning1": "시", "meaning2": "지"},
+          {"word1": "선", "word2": "전", "meaning1": "선", "meaning2": "전"},
+          {"word1": "가시", "word2": "가지", "meaning1": "가시", "meaning2": "가지"},
+          {"word1": "산", "word2": "잔", "meaning1": "산", "meaning2": "잔"},
+          {"word1": "삼", "word2": "잠", "meaning1": "삼", "meaning2": "잠"},
+          {"word1": "새", "word2": "재", "meaning1": "새", "meaning2": "재"},
+          {"word1": "솔", "word2": "졸", "meaning1": "솔", "meaning2": "졸"},
+          {"word1": "수", "word2": "주", "meaning1": "수", "meaning2": "주"},
+          {"word1": "심", "word2": "짐", "meaning1": "심", "meaning2": "짐"},
+          {"word1": "서리", "word2": "저리", "meaning1": "서리", "meaning2": "저리"},
+          {"word1": "소리", "word2": "조리", "meaning1": "소리", "meaning2": "조리"}
+        ]
+      },
+
+      "ㄴ-ㄹ": {
+        "_description": "비음-유음 대립",
+        "feature": "조음방법",
+        "pairs": [
+          {"word1": "나", "word2": "라", "meaning1": "나", "meaning2": "라"},
+          {"word1": "눈", "word2": "룬", "meaning1": "눈", "meaning2": "룬"},
+          {"word1": "노", "word2": "로", "meaning1": "노", "meaning2": "로"}
+        ],
+        "_note": "한국어에서 어두 ㄹ이 제한적이라 최소대립쌍이 적음"
+      },
+
+      "ㄴ-ㅁ": {
+        "_description": "치조비음-양순비음 대립",
+        "feature": "조음위치(비음)",
+        "pairs": [
+          {"word1": "눈", "word2": "문", "meaning1": "눈", "meaning2": "문"},
+          {"word1": "낮", "word2": "맛", "meaning1": "낮", "meaning2": "맛"},
+          {"word1": "남", "word2": "맘", "meaning1": "남", "meaning2": "맘"},
+          {"word1": "나무", "word2": "마무", "meaning1": "나무", "meaning2": "마무리"},
+          {"word1": "날", "word2": "말", "meaning1": "날", "meaning2": "말"},
+          {"word1": "너", "word2": "머", "meaning1": "너", "meaning2": "뭐"},
+          {"word1": "노", "word2": "모", "meaning1": "노", "meaning2": "모"},
+          {"word1": "누", "word2": "무", "meaning1": "누구", "meaning2": "무"},
+          {"word1": "내", "word2": "매", "meaning1": "내", "meaning2": "매"}
+        ]
+      },
+
+      "ㅅ-ㄷ": {
+        "_description": "마찰음-파열음 대립 (파열음화 오류 타겟)",
+        "feature": "조음방법",
+        "note": "ㅅ→ㄷ 파열음화는 아동의 흔한 조음 오류 패턴",
+        "pairs": [
+          {"word1": "소", "word2": "도", "meaning1": "소", "meaning2": "도"},
+          {"word1": "살", "word2": "달", "meaning1": "살", "meaning2": "달"},
+          {"word1": "새", "word2": "대", "meaning1": "새", "meaning2": "대"},
+          {"word1": "서", "word2": "더", "meaning1": "서", "meaning2": "더"},
+          {"word1": "수", "word2": "두", "meaning1": "수", "meaning2": "두"}
+        ]
+      }
+    },
+
+    "finalConsonant": {
+      "_description": "종성(받침) 대립 - 어말종성 생략 오류 타겟",
+
+      "받침ㄱ-ㄷ": {
+        "feature": "종성 위치",
+        "pairs": [
+          {"word1": "북", "word2": "붓", "meaning1": "북", "meaning2": "붓"},
+          {"word1": "목", "word2": "못", "meaning1": "목", "meaning2": "못"},
+          {"word1": "국", "word2": "굿", "meaning1": "국", "meaning2": "굿"},
+          {"word1": "먹", "word2": "멋", "meaning1": "먹다", "meaning2": "멋"}
+        ]
+      },
+
+      "받침ㄴ-ㅁ": {
+        "feature": "종성 비음",
+        "pairs": [
+          {"word1": "산", "word2": "삼", "meaning1": "산", "meaning2": "삼"},
+          {"word1": "만", "word2": "맘", "meaning1": "만", "meaning2": "맘"},
+          {"word1": "간", "word2": "감", "meaning1": "간", "meaning2": "감"},
+          {"word1": "반", "word2": "밤", "meaning1": "반", "meaning2": "밤"},
+          {"word1": "단", "word2": "담", "meaning1": "단", "meaning2": "담"},
+          {"word1": "손", "word2": "솜", "meaning1": "손", "meaning2": "솜"},
+          {"word1": "본", "word2": "봄", "meaning1": "본", "meaning2": "봄"}
+        ]
+      },
+
+      "받침ㄹ-ㄴ": {
+        "feature": "종성 유음-비음",
+        "pairs": [
+          {"word1": "살", "word2": "산", "meaning1": "살", "meaning2": "산"},
+          {"word1": "달", "word2": "단", "meaning1": "달", "meaning2": "단"},
+          {"word1": "불", "word2": "분", "meaning1": "불", "meaning2": "분"},
+          {"word1": "물", "word2": "문", "meaning1": "물", "meaning2": "문"},
+          {"word1": "말", "word2": "만", "meaning1": "말", "meaning2": "만"},
+          {"word1": "발", "word2": "반", "meaning1": "발", "meaning2": "반"},
+          {"word1": "걸", "word2": "건", "meaning1": "걸다", "meaning2": "건"},
+          {"word1": "돌", "word2": "돈", "meaning1": "돌", "meaning2": "돈"}
+        ]
+      },
+
+      "받침ㅂ-ㅁ": {
+        "feature": "종성 양순음",
+        "pairs": [
+          {"word1": "밥", "word2": "밤", "meaning1": "밥", "meaning2": "밤"},
+          {"word1": "입", "word2": "임", "meaning1": "입", "meaning2": "임금"},
+          {"word1": "삽", "word2": "삼", "meaning1": "삽", "meaning2": "삼"},
+          {"word1": "갑", "word2": "감", "meaning1": "갑", "meaning2": "감"},
+          {"word1": "답", "word2": "담", "meaning1": "답", "meaning2": "담"}
+        ]
+      },
+
+      "받침ㅇ-ㄴ": {
+        "feature": "종성 비음(연구개-치조)",
+        "pairs": [
+          {"word1": "강", "word2": "간", "meaning1": "강", "meaning2": "간"},
+          {"word1": "방", "word2": "반", "meaning1": "방", "meaning2": "반"},
+          {"word1": "상", "word2": "산", "meaning1": "상", "meaning2": "산"},
+          {"word1": "당", "word2": "단", "meaning1": "당", "meaning2": "단"},
+          {"word1": "공", "word2": "곤", "meaning1": "공", "meaning2": "곤"}
+        ]
+      }
+    },
+
+    "vowelContrast": {
+      "_description": "모음 대립 - 모음 왜곡/대치 오류 타겟",
+
+      "ㅏ-ㅓ": {
+        "feature": "전설-후설 모음",
+        "pairs": [
+          {"word1": "나", "word2": "너", "meaning1": "나", "meaning2": "너"},
+          {"word1": "말", "word2": "멀", "meaning1": "말", "meaning2": "멀다"},
+          {"word1": "달", "word2": "덜", "meaning1": "달", "meaning2": "덜"},
+          {"word1": "밤", "word2": "범", "meaning1": "밤", "meaning2": "범"}
+        ]
+      },
+
+      "ㅗ-ㅜ": {
+        "feature": "원순 고모음",
+        "pairs": [
+          {"word1": "소", "word2": "수", "meaning1": "소", "meaning2": "수"},
+          {"word1": "도", "word2": "두", "meaning1": "도", "meaning2": "두"},
+          {"word1": "모", "word2": "무", "meaning1": "모", "meaning2": "무"},
+          {"word1": "고", "word2": "구", "meaning1": "고", "meaning2": "구"},
+          {"word1": "코", "word2": "쿠", "meaning1": "코", "meaning2": "쿠"},
+          {"word1": "보", "word2": "부", "meaning1": "보다", "meaning2": "부"}
+        ]
+      },
+
+      "ㅣ-ㅡ": {
+        "feature": "전설-중설 고모음",
+        "pairs": [
+          {"word1": "기", "word2": "그", "meaning1": "기", "meaning2": "그"}
+        ]
+      },
+
+      "ㅐ-ㅔ": {
+        "feature": "전설 중모음 (현대 한국어에서 구별 감소)",
+        "pairs": [
+          {"word1": "새", "word2": "세", "meaning1": "새", "meaning2": "세"},
+          {"word1": "내", "word2": "네", "meaning1": "내", "meaning2": "네"},
+          {"word1": "대", "word2": "데", "meaning1": "대", "meaning2": "데"},
+          {"word1": "배", "word2": "베", "meaning1": "배", "meaning2": "베다"},
+          {"word1": "재", "word2": "제", "meaning1": "재", "meaning2": "제"}
+        ],
+        "_note": "현대 한국어에서 많은 화자가 이 두 모음을 구별하지 않음"
+      },
+
+      "ㅏ-ㅗ": {
+        "feature": "저모음-중모음",
+        "pairs": [
+          {"word1": "사", "word2": "소", "meaning1": "사", "meaning2": "소"},
+          {"word1": "나", "word2": "노", "meaning1": "나", "meaning2": "노"},
+          {"word1": "다", "word2": "도", "meaning1": "다", "meaning2": "도"},
+          {"word1": "가", "word2": "고", "meaning1": "가", "meaning2": "고"}
+        ]
+      }
+    }
+  },
+
+  "maximalOppositions": {
+    "_description": "최대대립: 여러 음운 자질이 다른 단어 쌍 (조음위치 + 조음방법 + 기식성/긴장성)",
+    "_note": "최대 대립 접근법은 심한 조음장애 아동에게 효과적. 음운체계의 빠른 일반화를 유도",
+
+    "examples": [
+      {
+        "word1": "밤",
+        "word2": "칼",
+        "phoneme1": "ㅂ",
+        "phoneme2": "ㅋ",
+        "differences": ["조음위치: 양순음→연구개음", "기식성: 평음→격음"],
+        "meaning1": "밤",
+        "meaning2": "칼"
+      },
+      {
+        "word1": "달",
+        "word2": "뿔",
+        "phoneme1": "ㄷ",
+        "phoneme2": "ㅃ",
+        "differences": ["조음위치: 치조음→양순음", "긴장성: 평음→경음"],
+        "meaning1": "달",
+        "meaning2": "뿔"
+      },
+      {
+        "word1": "사",
+        "word2": "꽃",
+        "phoneme1": "ㅅ",
+        "phoneme2": "ㄲ",
+        "differences": ["조음방법: 마찰음→파열음", "조음위치: 치조음→연구개음", "긴장성"],
+        "meaning1": "사",
+        "meaning2": "꽃"
+      },
+      {
+        "word1": "말",
+        "word2": "쌀",
+        "phoneme1": "ㅁ",
+        "phoneme2": "ㅆ",
+        "differences": ["조음방법: 비음→마찰음", "조음위치: 양순음→치조음", "긴장성"],
+        "meaning1": "말",
+        "meaning2": "쌀"
+      },
+      {
+        "word1": "눈",
+        "word2": "풀",
+        "phoneme1": "ㄴ",
+        "phoneme2": "ㅍ",
+        "differences": ["조음방법: 비음→파열음", "조음위치: 치조음→양순음", "기식성"],
+        "meaning1": "눈",
+        "meaning2": "풀"
+      },
+      {
+        "word1": "곰",
+        "word2": "쌀",
+        "phoneme1": "ㄱ",
+        "phoneme2": "ㅆ",
+        "differences": ["조음방법: 파열음→마찰음", "조음위치: 연구개음→치조음", "긴장성"],
+        "meaning1": "곰",
+        "meaning2": "쌀"
+      },
+      {
+        "word1": "빵",
+        "word2": "칼",
+        "phoneme1": "ㅃ",
+        "phoneme2": "ㅋ",
+        "differences": ["조음위치: 양순음→연구개음", "긴장성→기식성"],
+        "meaning1": "빵",
+        "meaning2": "칼"
+      }
+    ]
+  },
+
+  "twoSyllableWords": {
+    "_description": "2음절 친숙한 단어 쌍 - 아동 치료에 적합",
+
+    "aspirationPairs": [
+      {"word1": "바다", "word2": "파다", "contrast": "ㅂ-ㅍ", "meaning1": "바다", "meaning2": "파다"},
+      {"word1": "도끼", "word2": "토끼", "contrast": "ㄷ-ㅌ", "meaning1": "도끼", "meaning2": "토끼"},
+      {"word1": "바리", "word2": "파리", "contrast": "ㅂ-ㅍ", "meaning1": "바리", "meaning2": "파리"}
+    ],
+
+    "tensionPairs": [
+      {"word1": "꿀", "word2": "굴", "contrast": "ㄲ-ㄱ", "meaning1": "꿀", "meaning2": "굴"},
+      {"word1": "딸기", "word2": "달기", "contrast": "ㄸ-ㄷ", "meaning1": "딸기", "meaning2": "달다"},
+      {"word1": "쌀", "word2": "살", "contrast": "ㅆ-ㅅ", "meaning1": "쌀", "meaning2": "살"},
+      {"word1": "아빠", "word2": "아바", "contrast": "ㅃ-ㅂ", "meaning1": "아빠", "meaning2": "아바"},
+      {"word1": "오빠", "word2": "오바", "contrast": "ㅃ-ㅂ", "meaning1": "오빠", "meaning2": "오바"}
+    ],
+
+    "mannerPairs": [
+      {"word1": "상어", "word2": "장어", "contrast": "ㅅ-ㅈ", "meaning1": "상어", "meaning2": "장어"},
+      {"word1": "의사", "word2": "의자", "contrast": "ㅅ-ㅈ", "meaning1": "의사", "meaning2": "의자"},
+      {"word1": "가시", "word2": "가지", "contrast": "ㅅ-ㅈ", "meaning1": "가시", "meaning2": "가지"},
+      {"word1": "소리", "word2": "조리", "contrast": "ㅅ-ㅈ", "meaning1": "소리", "meaning2": "조리"},
+      {"word1": "서리", "word2": "저리", "contrast": "ㅅ-ㅈ", "meaning1": "서리", "meaning2": "저리"}
+    ],
+
+    "placePairs": [
+      {"word1": "도마", "word2": "꼬마", "contrast": "ㄷ-ㄱ", "meaning1": "도마", "meaning2": "꼬마"},
+      {"word1": "다리", "word2": "가리", "contrast": "ㄷ-ㄱ", "meaning1": "다리", "meaning2": "가리다"},
+      {"word1": "담", "word2": "감", "contrast": "ㄷ-ㄱ", "meaning1": "담", "meaning2": "감"}
+    ]
+  },
+
+  "therapyTargets": {
+    "_description": "조음치료에서 자주 다루는 오류 패턴별 최소대립쌍",
+
+    "fronting": {
+      "_description": "전방화 (연구개음→치조음 대치): ㄱ→ㄷ",
+      "targetPairs": "placeContrast.ㄷ-ㄱ"
+    },
+
+    "backing": {
+      "_description": "후방화 (치조음→연구개음 대치): ㄷ→ㄱ",
+      "targetPairs": "placeContrast.ㄷ-ㄱ"
+    },
+
+    "stopping": {
+      "_description": "파열음화 (마찰음/파찰음→파열음 대치): ㅅ→ㄷ, ㅈ→ㄷ",
+      "targetPairs": "mannerContrast.ㅅ-ㅈ"
+    },
+
+    "deaspiration": {
+      "_description": "탈기식음화 (격음→평음 대치): ㅋ→ㄱ, ㅌ→ㄷ, ㅍ→ㅂ",
+      "targetPairs": ["aspirationContrast.ㄱ-ㅋ", "aspirationContrast.ㄷ-ㅌ", "aspirationContrast.ㅂ-ㅍ"]
+    },
+
+    "tensing": {
+      "_description": "긴장음화 (평음→경음 대치): ㄱ→ㄲ, ㄷ→ㄸ, ㅂ→ㅃ",
+      "targetPairs": ["tensionContrast.ㄱ-ㄲ", "tensionContrast.ㄷ-ㄸ", "tensionContrast.ㅂ-ㅃ"]
+    },
+
+    "gliding": {
+      "_description": "활음화 (유음→활음 대치): ㄹ→ㅇ/ㅣ",
+      "targetPairs": "mannerContrast.ㄴ-ㄹ",
+      "_note": "한국어에서는 영어만큼 흔하지 않음"
+    },
+
+    "finalConsonantDeletion": {
+      "_description": "어말종성 생략",
+      "targetPairs": "finalConsonant"
+    }
+  }
+}

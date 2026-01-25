@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import SettingsPanelV2 from "@/components/v2/SettingsPanelV2";
 import SentenceListV2 from "@/components/v2/SentenceListV2";
+import ContrastModeView from "@/components/v2/ContrastModeView";
 import Roulette from "@/components/Roulette";
 import SessionSidebar from "@/components/v2/SessionSidebar";
 import SessionHeader from "@/components/v2/SessionHeader";
 import NewSessionModal from "@/components/v2/NewSessionModal";
+import CandidateSelectionModal from "@/components/v2/CandidateSelectionModal";
 import EmptyState from "@/components/v2/EmptyState";
 import EditModal from "@/components/EditModal";
 import { useGenerateV2 } from "@/hooks/useGenerateV2";
@@ -39,7 +41,7 @@ const DEFAULT_SETTINGS: GameSettingsV2 = {
   },
   sentenceLength: 3,
   diagnosis: "SSD",
-  therapyApproach: "minimal_pairs",
+  therapyApproach: "complexity",
   theme: "",
   communicativeFunction: null,
 };
@@ -62,11 +64,20 @@ export default function V2Page() {
     typeof window !== "undefined" ? navigator.onLine : true
   );
 
-  // Generate hook
+  // Candidate selection state
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
+  const [pendingCandidates, setPendingCandidates] = useState<TherapyItemV2[]>([]);
+  const [pendingContrastSets, setPendingContrastSets] = useState<ContrastSet[]>([]);
+  const [pendingRequestedCount, setPendingRequestedCount] = useState(10);
+
+  // Generate hook - show selection modal instead of directly adding
   const handleGenerateSuccess = useCallback((items: TherapyItemV2[], contrastSets: ContrastSet[]) => {
     if (currentSession) {
-      setCurrentSession((prev) => (prev ? { ...prev, items, contrastSets } : null));
-      setHasUnsavedChanges(true);
+      setPendingCandidates(items);
+      setPendingContrastSets(contrastSets);
+      setPendingRequestedCount(currentSession.settings.count);
+      setIsSelectionModalOpen(true);
+      setIsSettingsOpen(false);
     }
   }, [currentSession]);
 
@@ -79,12 +90,21 @@ export default function V2Page() {
     clearWarning,
   } = useGenerateV2(handleGenerateSuccess);
 
-  // Load sessions on mount
+  // Load sessions on mount and restore last viewed session
   useEffect(() => {
     const loadSessions = async () => {
       try {
         const loaded = await getAllSessions();
         setSessions(loaded);
+
+        // Restore last viewed session from localStorage
+        const lastSessionId = localStorage.getItem("v2_last_session_id");
+        if (lastSessionId && loaded.length > 0) {
+          const lastSession = loaded.find((s) => s.id === lastSessionId);
+          if (lastSession) {
+            setCurrentSession(lastSession);
+          }
+        }
       } catch (e) {
         console.error("Failed to load sessions", e);
       }
@@ -92,6 +112,13 @@ export default function V2Page() {
     };
     loadSessions();
   }, []);
+
+  // Persist current session ID to localStorage
+  useEffect(() => {
+    if (currentSession) {
+      localStorage.setItem("v2_last_session_id", currentSession.id);
+    }
+  }, [currentSession]);
 
   // Online/offline detection
   useEffect(() => {
@@ -211,6 +238,23 @@ export default function V2Page() {
     await generate(newSettings);
   };
 
+  const handleSelectionConfirm = (selected: TherapyItemV2[]) => {
+    if (!currentSession) return;
+    setCurrentSession((prev) =>
+      prev ? { ...prev, items: selected, contrastSets: pendingContrastSets } : null
+    );
+    setHasUnsavedChanges(true);
+    setIsSelectionModalOpen(false);
+    setPendingCandidates([]);
+    setPendingContrastSets([]);
+  };
+
+  const handleSelectionClose = () => {
+    setIsSelectionModalOpen(false);
+    setPendingCandidates([]);
+    setPendingContrastSets([]);
+  };
+
   const handleDelete = (id: string) => {
     if (!currentSession) return;
     setCurrentSession((prev) =>
@@ -263,12 +307,9 @@ export default function V2Page() {
     }
   };
 
-  const showContrastSets =
-    currentSession?.settings.therapyApproach &&
-    (currentSession.settings.therapyApproach === "minimal_pairs" ||
-      currentSession.settings.therapyApproach === "maximal_oppositions") &&
-    currentSession.contrastSets &&
-    currentSession.contrastSets.length > 0;
+  // Note: contrastSets display is disabled - minimal_pairs/maximal_oppositions
+  // are planned for a separate word-pair discrimination mode
+  const showContrastSets = false;
 
   if (!isInitialized) {
     return (
@@ -413,7 +454,7 @@ export default function V2Page() {
                           다시 시도하기
                         </button>
                       </motion.div>
-                    ) : currentSession.items.length === 0 ? (
+                    ) : currentSession.items.length === 0 && currentMode !== "contrast" ? (
                       <motion.div
                         key="empty"
                         initial={{ opacity: 0 }}
@@ -431,6 +472,15 @@ export default function V2Page() {
                         >
                           문장 생성하기
                         </button>
+                      </motion.div>
+                    ) : currentMode === "contrast" ? (
+                      <motion.div
+                        key="contrast"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <ContrastModeView language={currentSession.settings.language} />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -513,6 +563,14 @@ export default function V2Page() {
         initialText={editingItem?.text || ""}
         onClose={() => setEditingItem(null)}
         onSave={handleEditSave}
+      />
+
+      <CandidateSelectionModal
+        isOpen={isSelectionModalOpen}
+        candidates={pendingCandidates}
+        requestedCount={pendingRequestedCount}
+        onClose={handleSelectionClose}
+        onConfirm={handleSelectionConfirm}
       />
     </div>
   );

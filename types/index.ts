@@ -29,7 +29,7 @@ export interface GenerateResponse {
 }
 
 // 게임 모드 타입
-export type GameMode = 'list' | 'roulette' | 'cards' | 'ladder';
+export type GameMode = 'list' | 'roulette' | 'cards' | 'ladder' | 'contrast';
 
 // 룰렛 섹션 타입
 export interface RouletteSection {

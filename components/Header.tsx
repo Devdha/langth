@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { List, Disc, Plus } from "lucide-react";
+import { List, Disc, Plus, GitCompare } from "lucide-react";
 import Link from "next/link";
 import { GameMode } from "@/types";
 
@@ -113,6 +113,19 @@ export default function Header({ currentMode, onModeChange, onNewGame, isV2 = fa
               <Disc size={18} className="md:w-5 md:h-5" />
               <span>룰렛</span>
             </button>
+            {isV2 && (
+              <button
+                onClick={() => onModeChange('contrast')}
+                className={`flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg font-bold transition-all flex-1 md:flex-none text-sm md:text-base ${
+                  currentMode === 'contrast'
+                    ? 'bg-pink-500 text-white shadow-md'
+                    : 'text-gray-400 hover:text-pink-500 hover:bg-pink-50'
+                }`}
+              >
+                <GitCompare size={18} className="md:w-5 md:h-5" />
+                <span>대립쌍</span>
+              </button>
+            )}
           </div>
 
           {/* New Button - desktop only */}

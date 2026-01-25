@@ -1,7 +1,8 @@
 // Language and settings types
 export type LanguageV2 = 'ko' | 'en';
 export type DiagnosisType = 'SSD' | 'ASD' | 'LD';
-export type TherapyApproach = 'minimal_pairs' | 'maximal_oppositions' | 'complexity' | 'core_vocabulary';
+// Note: minimal_pairs and maximal_oppositions are planned for a separate word-pair discrimination mode
+export type TherapyApproach = 'complexity' | 'core_vocabulary';
 export type CommunicativeFunction = 'request' | 'reject' | 'help' | 'choice' | 'attention' | 'question';
 export type PhonemePosition = 'onset' | 'nucleus' | 'coda' | 'any';
 

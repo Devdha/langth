@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 _client: AsyncOpenAI | None = None
 _ALLOWED_DIFFICULTIES = {level.value for level in DifficultyLevel}
 
+# Gemini API base URL for OpenAI compatibility
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
 
 @dataclass
 class GenerateCandidatesResult:
@@ -39,22 +42,25 @@ class GenerateCandidatesResult:
 
 
 def _get_client() -> AsyncOpenAI:
-    """Get or create the OpenAI client.
+    """Get or create the Gemini client (via OpenAI compatibility layer).
 
     Uses lazy initialization to avoid creating the client
     until it's actually needed.
 
     Returns:
-        AsyncOpenAI client instance.
+        AsyncOpenAI client instance configured for Gemini.
 
     Raises:
-        ValueError: If OpenAI API key is not configured.
+        ValueError: If Gemini API key is not configured.
     """
     global _client
     if _client is None:
-        if not settings.openai_api_key:
-            raise ValueError("OpenAI API key is not configured")
-        _client = AsyncOpenAI(api_key=settings.openai_api_key)
+        if not settings.gemini_api_key:
+            raise ValueError("Gemini API key is not configured")
+        _client = AsyncOpenAI(
+            api_key=settings.gemini_api_key,
+            base_url=GEMINI_BASE_URL,
+        )
     return _client
 
 
@@ -88,7 +94,7 @@ async def generate_candidates(
         ...     target=TargetConfig(phoneme="ㄹ", position=PhonemePosition.ONSET),
         ...     sentenceLength=4,
         ...     diagnosis=DiagnosisType.SSD,
-        ...     therapyApproach=TherapyApproach.MINIMAL_PAIRS,
+        ...     therapyApproach=TherapyApproach.COMPLEXITY,
         ... )
         >>> result = await generate_candidates(request)
         >>> isinstance(result.candidates, list)
@@ -108,11 +114,10 @@ async def generate_candidates(
 
     client = _get_client()
 
-    # GPT-5.2 Responses API - low effort for speed
-    reasoning_effort = "low"
-
+    # Gemini 3 Flash with reasoning
+    model = "gemini-3-flash-preview"
     logger.info(
-        f"[LLM] 호출 시작 - model=gpt-5.2, effort={reasoning_effort}, "
+        f"[LLM] 호출 시작 - model={model}, "
         f"prompt_len={prompt_len}, batch_size={batch_size}"
     )
 
@@ -120,12 +125,14 @@ async def generate_candidates(
 
     llm_start = time.time()
     try:
-        response = await client.responses.create(
-            model="gpt-5.2",
-            input=f"{system_prompt}\n\n{prompt}",
-            reasoning={"effort": reasoning_effort},
-            text={"format": {"type": "json_object"}},
-            timeout=120.0,  # 2분 타임아웃 (medium reasoning은 시간이 더 필요)
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+            timeout=60.0,
         )
         llm_time = int((time.time() - llm_start) * 1000)
         logger.info(f"[LLM] 응답 수신 - {llm_time}ms")
@@ -134,7 +141,7 @@ async def generate_candidates(
         logger.error(f"[LLM] API 호출 실패 - {llm_time}ms, error: {type(e).__name__}: {e}")
         raise
 
-    content = response.output_text
+    content = response.choices[0].message.content
     if not content:
         logger.warning("[LLM] 빈 응답 수신")
         return GenerateCandidatesResult(candidates=[])

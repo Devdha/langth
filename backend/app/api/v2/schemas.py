@@ -26,18 +26,18 @@ class DiagnosisType(str, Enum):
 
 
 class TherapyApproach(str, Enum):
-    """Therapy approaches for sentence generation."""
+    """Therapy approaches for sentence generation.
 
-    MINIMAL_PAIRS = "minimal_pairs"
-    MAXIMAL_OPPOSITIONS = "maximal_oppositions"
+    Note: minimal_pairs and maximal_oppositions are planned for a separate
+    word-pair discrimination mode (not sentence generation).
+    """
+
     COMPLEXITY = "complexity"
     CORE_VOCABULARY = "core_vocabulary"
 
 
 ALLOWED_APPROACHES_BY_DIAGNOSIS: dict["DiagnosisType", set["TherapyApproach"]] = {
     DiagnosisType.SSD: {
-        TherapyApproach.MINIMAL_PAIRS,
-        TherapyApproach.MAXIMAL_OPPOSITIONS,
         TherapyApproach.COMPLEXITY,
     },
     DiagnosisType.ASD: {TherapyApproach.CORE_VOCABULARY},

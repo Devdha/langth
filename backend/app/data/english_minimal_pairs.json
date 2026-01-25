@@ -1,0 +1,431 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "English Minimal Pairs DB - Child-friendly for Speech Therapy",
+    "sources": [
+      "ASHA (American Speech-Language-Hearing Association)",
+      "Caroline Bowen's Speech-Language-Therapy.com",
+      "Linguisystems Articulation Materials",
+      "Super Duper Publications"
+    ],
+    "lastUpdated": "2026-01-25",
+    "totalPairs": 120,
+    "categories": [
+      "voicingContrast (voiced/voiceless)",
+      "placeContrast (place of articulation)",
+      "mannerContrast (manner of articulation)",
+      "finalConsonant (word-final)",
+      "clusterReduction (consonant clusters)",
+      "vowelContrast (vowels)"
+    ],
+    "notes": "Child-friendly vocabulary, common therapy targets"
+  },
+
+  "minimalPairs": {
+    "_description": "Minimal pairs: words differing by one phoneme",
+
+    "voicingContrast": {
+      "_description": "Voiced vs Voiceless consonant contrast",
+
+      "p-b": {
+        "feature": "voicing",
+        "place": "bilabial",
+        "pairs": [
+          {"word1": "pig", "word2": "big", "meaning1": "돼지", "meaning2": "큰"},
+          {"word1": "pea", "word2": "bee", "meaning1": "완두콩", "meaning2": "벌"},
+          {"word1": "pat", "word2": "bat", "meaning1": "토닥", "meaning2": "방망이"},
+          {"word1": "pie", "word2": "bye", "meaning1": "파이", "meaning2": "안녕"},
+          {"word1": "pear", "word2": "bear", "meaning1": "배", "meaning2": "곰"},
+          {"word1": "pin", "word2": "bin", "meaning1": "핀", "meaning2": "통"},
+          {"word1": "pop", "word2": "bob", "meaning1": "팡", "meaning2": "밥(이름)"},
+          {"word1": "pet", "word2": "bet", "meaning1": "애완동물", "meaning2": "내기"}
+        ]
+      },
+
+      "t-d": {
+        "feature": "voicing",
+        "place": "alveolar",
+        "pairs": [
+          {"word1": "tie", "word2": "die", "meaning1": "넥타이", "meaning2": "주사위"},
+          {"word1": "two", "word2": "do", "meaning1": "둘", "meaning2": "하다"},
+          {"word1": "toe", "word2": "dough", "meaning1": "발가락", "meaning2": "반죽"},
+          {"word1": "ten", "word2": "den", "meaning1": "열", "meaning2": "굴"},
+          {"word1": "time", "word2": "dime", "meaning1": "시간", "meaning2": "10센트"},
+          {"word1": "town", "word2": "down", "meaning1": "마을", "meaning2": "아래"},
+          {"word1": "tear", "word2": "dear", "meaning1": "눈물", "meaning2": "사랑하는"},
+          {"word1": "tip", "word2": "dip", "meaning1": "팁", "meaning2": "담그다"}
+        ]
+      },
+
+      "k-g": {
+        "feature": "voicing",
+        "place": "velar",
+        "pairs": [
+          {"word1": "coat", "word2": "goat", "meaning1": "코트", "meaning2": "염소"},
+          {"word1": "cap", "word2": "gap", "meaning1": "모자", "meaning2": "틈"},
+          {"word1": "curl", "word2": "girl", "meaning1": "곱슬", "meaning2": "소녀"},
+          {"word1": "come", "word2": "gum", "meaning1": "오다", "meaning2": "껌"},
+          {"word1": "cold", "word2": "gold", "meaning1": "추운", "meaning2": "금"},
+          {"word1": "Kate", "word2": "gate", "meaning1": "케이트", "meaning2": "문"},
+          {"word1": "class", "word2": "glass", "meaning1": "반", "meaning2": "유리"},
+          {"word1": "cave", "word2": "gave", "meaning1": "동굴", "meaning2": "주었다"}
+        ]
+      },
+
+      "f-v": {
+        "feature": "voicing",
+        "place": "labiodental",
+        "pairs": [
+          {"word1": "fan", "word2": "van", "meaning1": "부채/팬", "meaning2": "밴"},
+          {"word1": "fine", "word2": "vine", "meaning1": "좋은", "meaning2": "덩굴"},
+          {"word1": "fat", "word2": "vat", "meaning1": "뚱뚱한", "meaning2": "통"},
+          {"word1": "fast", "word2": "vast", "meaning1": "빠른", "meaning2": "넓은"},
+          {"word1": "ferry", "word2": "very", "meaning1": "배", "meaning2": "매우"},
+          {"word1": "few", "word2": "view", "meaning1": "조금", "meaning2": "경치"}
+        ]
+      },
+
+      "s-z": {
+        "feature": "voicing",
+        "place": "alveolar fricative",
+        "pairs": [
+          {"word1": "sip", "word2": "zip", "meaning1": "홀짝", "meaning2": "지퍼"},
+          {"word1": "sue", "word2": "zoo", "meaning1": "수(이름)", "meaning2": "동물원"},
+          {"word1": "bus", "word2": "buzz", "meaning1": "버스", "meaning2": "윙윙"},
+          {"word1": "ice", "word2": "eyes", "meaning1": "얼음", "meaning2": "눈들"},
+          {"word1": "rice", "word2": "rise", "meaning1": "쌀", "meaning2": "오르다"},
+          {"word1": "price", "word2": "prize", "meaning1": "가격", "meaning2": "상"}
+        ]
+      },
+
+      "ch-j": {
+        "feature": "voicing",
+        "place": "palatal affricate",
+        "pairs": [
+          {"word1": "chin", "word2": "gin", "meaning1": "턱", "meaning2": "진"},
+          {"word1": "choke", "word2": "joke", "meaning1": "막히다", "meaning2": "농담"},
+          {"word1": "chunk", "word2": "junk", "meaning1": "덩어리", "meaning2": "쓰레기"},
+          {"word1": "choice", "word2": "Joyce", "meaning1": "선택", "meaning2": "조이스"},
+          {"word1": "cheer", "word2": "jeer", "meaning1": "응원", "meaning2": "야유"},
+          {"word1": "chain", "word2": "Jane", "meaning1": "사슬", "meaning2": "제인"}
+        ]
+      }
+    },
+
+    "placeContrast": {
+      "_description": "Place of articulation contrast",
+
+      "p-t-k": {
+        "_description": "Bilabial-Alveolar-Velar (voiceless stops)",
+        "feature": "place",
+        "pairs": [
+          {"word1": "pea", "word2": "tea", "meaning1": "완두콩", "meaning2": "차"},
+          {"word1": "pie", "word2": "tie", "meaning1": "파이", "meaning2": "넥타이"},
+          {"word1": "tea", "word2": "key", "meaning1": "차", "meaning2": "열쇠"},
+          {"word1": "tap", "word2": "cap", "meaning1": "수도꼭지", "meaning2": "모자"},
+          {"word1": "pan", "word2": "tan", "meaning1": "팬", "meaning2": "황갈색"},
+          {"word1": "tan", "word2": "can", "meaning1": "황갈색", "meaning2": "캔"}
+        ]
+      },
+
+      "b-d-g": {
+        "_description": "Bilabial-Alveolar-Velar (voiced stops)",
+        "feature": "place",
+        "pairs": [
+          {"word1": "bee", "word2": "D", "meaning1": "벌", "meaning2": "디"},
+          {"word1": "bat", "word2": "dat", "meaning1": "방망이", "meaning2": "뎃"},
+          {"word1": "bug", "word2": "dug", "meaning1": "벌레", "meaning2": "팠다"},
+          {"word1": "dip", "word2": "gip", "meaning1": "담그다", "meaning2": "깁"},
+          {"word1": "Ben", "word2": "den", "meaning1": "벤", "meaning2": "굴"},
+          {"word1": "den", "word2": "Jen", "meaning1": "굴", "meaning2": "젠"}
+        ]
+      },
+
+      "m-n-ng": {
+        "_description": "Bilabial-Alveolar-Velar nasals",
+        "feature": "place (nasal)",
+        "pairs": [
+          {"word1": "ram", "word2": "ran", "meaning1": "숫양", "meaning2": "달렸다"},
+          {"word1": "sum", "word2": "sun", "meaning1": "합계", "meaning2": "태양"},
+          {"word1": "win", "word2": "wing", "meaning1": "이기다", "meaning2": "날개"},
+          {"word1": "sin", "word2": "sing", "meaning1": "죄", "meaning2": "노래하다"},
+          {"word1": "ban", "word2": "bang", "meaning1": "금지", "meaning2": "쾅"},
+          {"word1": "thin", "word2": "thing", "meaning1": "얇은", "meaning2": "물건"}
+        ]
+      },
+
+      "f-th": {
+        "_description": "Labiodental-Interdental fricatives (common substitution)",
+        "feature": "place",
+        "pairs": [
+          {"word1": "fin", "word2": "thin", "meaning1": "지느러미", "meaning2": "얇은"},
+          {"word1": "free", "word2": "three", "meaning1": "무료", "meaning2": "셋"},
+          {"word1": "fink", "word2": "think", "meaning1": "핑크", "meaning2": "생각하다"},
+          {"word1": "fought", "word2": "thought", "meaning1": "싸웠다", "meaning2": "생각했다"},
+          {"word1": "frown", "word2": "thrown", "meaning1": "찡그리다", "meaning2": "던졌다"}
+        ]
+      }
+    },
+
+    "mannerContrast": {
+      "_description": "Manner of articulation contrast",
+
+      "s-sh": {
+        "_description": "Alveolar-Palatal fricatives",
+        "feature": "manner/place",
+        "pairs": [
+          {"word1": "sea", "word2": "she", "meaning1": "바다", "meaning2": "그녀"},
+          {"word1": "sip", "word2": "ship", "meaning1": "홀짝", "meaning2": "배"},
+          {"word1": "sock", "word2": "shock", "meaning1": "양말", "meaning2": "충격"},
+          {"word1": "seat", "word2": "sheet", "meaning1": "좌석", "meaning2": "시트"},
+          {"word1": "save", "word2": "shave", "meaning1": "구하다", "meaning2": "면도"},
+          {"word1": "same", "word2": "shame", "meaning1": "같은", "meaning2": "부끄러움"},
+          {"word1": "sore", "word2": "shore", "meaning1": "아픈", "meaning2": "해변"},
+          {"word1": "sow", "word2": "show", "meaning1": "씨뿌리다", "meaning2": "보여주다"}
+        ]
+      },
+
+      "sh-ch": {
+        "_description": "Fricative-Affricate contrast",
+        "feature": "manner",
+        "pairs": [
+          {"word1": "ship", "word2": "chip", "meaning1": "배", "meaning2": "칩"},
+          {"word1": "share", "word2": "chair", "meaning1": "나누다", "meaning2": "의자"},
+          {"word1": "shop", "word2": "chop", "meaning1": "가게", "meaning2": "자르다"},
+          {"word1": "shoe", "word2": "chew", "meaning1": "신발", "meaning2": "씹다"},
+          {"word1": "sheep", "word2": "cheap", "meaning1": "양", "meaning2": "싼"},
+          {"word1": "wash", "word2": "watch", "meaning1": "씻다", "meaning2": "시계"}
+        ]
+      },
+
+      "w-r": {
+        "_description": "Glide-Liquid contrast (common developmental error)",
+        "feature": "manner",
+        "pairs": [
+          {"word1": "wing", "word2": "ring", "meaning1": "날개", "meaning2": "반지"},
+          {"word1": "wed", "word2": "red", "meaning1": "결혼하다", "meaning2": "빨간"},
+          {"word1": "wipe", "word2": "ripe", "meaning1": "닦다", "meaning2": "익은"},
+          {"word1": "wait", "word2": "rate", "meaning1": "기다리다", "meaning2": "비율"},
+          {"word1": "wake", "word2": "rake", "meaning1": "깨다", "meaning2": "갈퀴"},
+          {"word1": "west", "word2": "rest", "meaning1": "서쪽", "meaning2": "쉬다"}
+        ]
+      },
+
+      "l-r": {
+        "_description": "Lateral-Rhotic contrast",
+        "feature": "manner",
+        "pairs": [
+          {"word1": "lip", "word2": "rip", "meaning1": "입술", "meaning2": "찢다"},
+          {"word1": "light", "word2": "right", "meaning1": "빛", "meaning2": "오른쪽"},
+          {"word1": "lane", "word2": "rain", "meaning1": "길", "meaning2": "비"},
+          {"word1": "lake", "word2": "rake", "meaning1": "호수", "meaning2": "갈퀴"},
+          {"word1": "led", "word2": "red", "meaning1": "이끌었다", "meaning2": "빨간"},
+          {"word1": "lock", "word2": "rock", "meaning1": "자물쇠", "meaning2": "바위"},
+          {"word1": "long", "word2": "wrong", "meaning1": "긴", "meaning2": "틀린"},
+          {"word1": "lice", "word2": "rice", "meaning1": "이", "meaning2": "쌀"}
+        ]
+      },
+
+      "w-l": {
+        "_description": "Glide-Lateral contrast",
+        "feature": "manner",
+        "pairs": [
+          {"word1": "wet", "word2": "let", "meaning1": "젖은", "meaning2": "하게하다"},
+          {"word1": "way", "word2": "lay", "meaning1": "길", "meaning2": "놓다"},
+          {"word1": "wine", "word2": "line", "meaning1": "와인", "meaning2": "선"},
+          {"word1": "wake", "word2": "lake", "meaning1": "깨다", "meaning2": "호수"},
+          {"word1": "week", "word2": "leak", "meaning1": "주", "meaning2": "새다"}
+        ]
+      }
+    },
+
+    "finalConsonant": {
+      "_description": "Word-final consonant contrasts",
+
+      "final-p-b": {
+        "feature": "voicing (final)",
+        "pairs": [
+          {"word1": "cap", "word2": "cab", "meaning1": "모자", "meaning2": "택시"},
+          {"word1": "cup", "word2": "cub", "meaning1": "컵", "meaning2": "새끼"},
+          {"word1": "mop", "word2": "mob", "meaning1": "대걸레", "meaning2": "군중"},
+          {"word1": "rip", "word2": "rib", "meaning1": "찢다", "meaning2": "갈비뼈"}
+        ]
+      },
+
+      "final-t-d": {
+        "feature": "voicing (final)",
+        "pairs": [
+          {"word1": "bat", "word2": "bad", "meaning1": "방망이", "meaning2": "나쁜"},
+          {"word1": "bet", "word2": "bed", "meaning1": "내기", "meaning2": "침대"},
+          {"word1": "cat", "word2": "cad", "meaning1": "고양이", "meaning2": "못된놈"},
+          {"word1": "hit", "word2": "hid", "meaning1": "치다", "meaning2": "숨겼다"},
+          {"word1": "hat", "word2": "had", "meaning1": "모자", "meaning2": "가졌다"},
+          {"word1": "seat", "word2": "seed", "meaning1": "좌석", "meaning2": "씨앗"}
+        ]
+      },
+
+      "final-k-g": {
+        "feature": "voicing (final)",
+        "pairs": [
+          {"word1": "back", "word2": "bag", "meaning1": "등", "meaning2": "가방"},
+          {"word1": "duck", "word2": "dug", "meaning1": "오리", "meaning2": "팠다"},
+          {"word1": "pick", "word2": "pig", "meaning1": "고르다", "meaning2": "돼지"},
+          {"word1": "lock", "word2": "log", "meaning1": "자물쇠", "meaning2": "통나무"},
+          {"word1": "tack", "word2": "tag", "meaning1": "압정", "meaning2": "태그"}
+        ]
+      },
+
+      "final-n-ng": {
+        "feature": "place (final nasal)",
+        "pairs": [
+          {"word1": "run", "word2": "rung", "meaning1": "달리다", "meaning2": "울렸다"},
+          {"word1": "sun", "word2": "sung", "meaning1": "태양", "meaning2": "불렀다"},
+          {"word1": "win", "word2": "wing", "meaning1": "이기다", "meaning2": "날개"},
+          {"word1": "ban", "word2": "bang", "meaning1": "금지", "meaning2": "쾅"},
+          {"word1": "ton", "word2": "tongue", "meaning1": "톤", "meaning2": "혀"}
+        ]
+      }
+    },
+
+    "clusterReduction": {
+      "_description": "Consonant cluster contrasts (for cluster reduction errors)",
+
+      "s-clusters": {
+        "_description": "S-blend vs single consonant",
+        "feature": "cluster",
+        "pairs": [
+          {"word1": "top", "word2": "stop", "meaning1": "꼭대기", "meaning2": "멈추다"},
+          {"word1": "tar", "word2": "star", "meaning1": "타르", "meaning2": "별"},
+          {"word1": "low", "word2": "slow", "meaning1": "낮은", "meaning2": "느린"},
+          {"word1": "nail", "word2": "snail", "meaning1": "못", "meaning2": "달팽이"},
+          {"word1": "pot", "word2": "spot", "meaning1": "냄비", "meaning2": "점"},
+          {"word1": "wing", "word2": "swing", "meaning1": "날개", "meaning2": "그네"},
+          {"word1": "mile", "word2": "smile", "meaning1": "마일", "meaning2": "미소"},
+          {"word1": "now", "word2": "snow", "meaning1": "지금", "meaning2": "눈"}
+        ]
+      },
+
+      "l-clusters": {
+        "_description": "L-blend vs single consonant",
+        "feature": "cluster",
+        "pairs": [
+          {"word1": "bay", "word2": "play", "meaning1": "만", "meaning2": "놀다"},
+          {"word1": "boo", "word2": "blue", "meaning1": "야", "meaning2": "파란"},
+          {"word1": "goo", "word2": "glue", "meaning1": "끈적", "meaning2": "풀"},
+          {"word1": "fag", "word2": "flag", "meaning1": "담배", "meaning2": "깃발"},
+          {"word1": "fat", "word2": "flat", "meaning1": "뚱뚱한", "meaning2": "평평한"},
+          {"word1": "lip", "word2": "clip", "meaning1": "입술", "meaning2": "클립"}
+        ]
+      },
+
+      "r-clusters": {
+        "_description": "R-blend vs single consonant",
+        "feature": "cluster",
+        "pairs": [
+          {"word1": "bead", "word2": "bread", "meaning1": "구슬", "meaning2": "빵"},
+          {"word1": "bake", "word2": "break", "meaning1": "굽다", "meaning2": "부수다"},
+          {"word1": "gate", "word2": "great", "meaning1": "문", "meaning2": "위대한"},
+          {"word1": "gown", "word2": "grown", "meaning1": "가운", "meaning2": "자란"},
+          {"word1": "tip", "word2": "trip", "meaning1": "팁", "meaning2": "여행"},
+          {"word1": "toe", "word2": "trow", "meaning1": "발가락", "meaning2": "던지다"}
+        ]
+      }
+    },
+
+    "vowelContrast": {
+      "_description": "Vowel minimal pairs",
+
+      "short-vowels": {
+        "feature": "vowel height/position",
+        "pairs": [
+          {"word1": "bat", "word2": "bet", "meaning1": "방망이", "meaning2": "내기"},
+          {"word1": "bat", "word2": "bit", "meaning1": "방망이", "meaning2": "조금"},
+          {"word1": "bet", "word2": "but", "meaning1": "내기", "meaning2": "하지만"},
+          {"word1": "cat", "word2": "cut", "meaning1": "고양이", "meaning2": "자르다"},
+          {"word1": "hot", "word2": "hat", "meaning1": "뜨거운", "meaning2": "모자"},
+          {"word1": "hot", "word2": "hut", "meaning1": "뜨거운", "meaning2": "오두막"},
+          {"word1": "pin", "word2": "pen", "meaning1": "핀", "meaning2": "펜"},
+          {"word1": "pig", "word2": "peg", "meaning1": "돼지", "meaning2": "못"}
+        ]
+      },
+
+      "long-short": {
+        "feature": "vowel length",
+        "pairs": [
+          {"word1": "sheep", "word2": "ship", "meaning1": "양", "meaning2": "배"},
+          {"word1": "feet", "word2": "fit", "meaning1": "발", "meaning2": "맞다"},
+          {"word1": "seat", "word2": "sit", "meaning1": "좌석", "meaning2": "앉다"},
+          {"word1": "beat", "word2": "bit", "meaning1": "치다", "meaning2": "조금"},
+          {"word1": "pool", "word2": "pull", "meaning1": "수영장", "meaning2": "당기다"},
+          {"word1": "food", "word2": "foot", "meaning1": "음식", "meaning2": "발"}
+        ]
+      }
+    }
+  },
+
+  "therapyTargets": {
+    "_description": "Common articulation error patterns and target minimal pairs",
+
+    "fronting": {
+      "_description": "Velar→Alveolar substitution: k→t, g→d",
+      "targetPairs": ["voicingContrast.k-g", "placeContrast.p-t-k"]
+    },
+
+    "backing": {
+      "_description": "Alveolar→Velar substitution: t→k, d→g",
+      "targetPairs": ["voicingContrast.t-d", "placeContrast.p-t-k"]
+    },
+
+    "stopping": {
+      "_description": "Fricative→Stop substitution: s→t, f→p, sh→t",
+      "targetPairs": ["mannerContrast.s-sh", "voicingContrast.f-v"]
+    },
+
+    "gliding": {
+      "_description": "Liquid→Glide substitution: r→w, l→w",
+      "targetPairs": ["mannerContrast.w-r", "mannerContrast.w-l"]
+    },
+
+    "clusterReduction": {
+      "_description": "Consonant cluster simplification",
+      "targetPairs": ["clusterReduction.s-clusters", "clusterReduction.l-clusters", "clusterReduction.r-clusters"]
+    },
+
+    "finalConsonantDeletion": {
+      "_description": "Word-final consonant deletion",
+      "targetPairs": "finalConsonant"
+    },
+
+    "voicingErrors": {
+      "_description": "Voiced/Voiceless confusion",
+      "targetPairs": ["voicingContrast.p-b", "voicingContrast.t-d", "voicingContrast.k-g"]
+    },
+
+    "th-substitution": {
+      "_description": "Th→F/S substitution (common in children)",
+      "targetPairs": "placeContrast.f-th"
+    }
+  },
+
+  "twoSyllableWords": {
+    "_description": "Two-syllable child-friendly minimal pairs",
+
+    "voicingPairs": [
+      {"word1": "panda", "word2": "bandit", "contrast": "p-b", "meaning1": "판다", "meaning2": "도적"},
+      {"word1": "tiger", "word2": "diver", "contrast": "t-d", "meaning1": "호랑이", "meaning2": "잠수부"},
+      {"word1": "kitten", "word2": "given", "contrast": "k-g", "meaning1": "새끼고양이", "meaning2": "주어진"}
+    ],
+
+    "mannerPairs": [
+      {"word1": "seashell", "word2": "she-shell", "contrast": "s-sh", "meaning1": "조개", "meaning2": "그녀조개"},
+      {"word1": "fishing", "word2": "wishing", "contrast": "f-w", "meaning1": "낚시", "meaning2": "소원"},
+      {"word1": "rocket", "word2": "locket", "contrast": "r-l", "meaning1": "로켓", "meaning2": "로켓"}
+    ],
+
+    "clusterPairs": [
+      {"word1": "spider", "word2": "cider", "contrast": "sp-c", "meaning1": "거미", "meaning2": "사과주스"},
+      {"word1": "dragon", "word2": "wagon", "contrast": "dr-w", "meaning1": "용", "meaning2": "마차"},
+      {"word1": "flower", "word2": "tower", "contrast": "fl-t", "meaning1": "꽃", "meaning2": "탑"}
+    ]
+  }
+}

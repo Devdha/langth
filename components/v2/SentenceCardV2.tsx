@@ -13,13 +13,6 @@ interface SentenceCardV2Props {
   onDelete: (id: string) => void;
 }
 
-// Diagnosis color mapping
-const diagnosisColors = {
-  SSD: "bg-blue-100 text-blue-700 border-blue-200",
-  ASD: "bg-purple-100 text-purple-700 border-purple-200",
-  LD: "bg-green-100 text-green-700 border-green-200",
-};
-
 // Position labels in Korean
 const positionLabels = {
   onset: "초성",
@@ -47,7 +40,7 @@ export default function SentenceCardV2({
   onEdit,
   onDelete,
 }: SentenceCardV2Props) {
-  const scorePercentage = Math.round(item.score * 100);
+  const scorePercentage = Math.round(item.score);
 
   return (
     <motion.div
@@ -92,15 +85,8 @@ export default function SentenceCardV2({
       </div>
 
       <div className="p-6">
-        {/* Top badges: Diagnosis and Target */}
+        {/* Top badges: Target and Difficulty */}
         <div className="mb-4 flex flex-wrap gap-2">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-bold border ${
-              diagnosisColors[item.diagnosis]
-            }`}
-          >
-            {item.diagnosis}
-          </span>
           {item.target ? (
             <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-200">
               {item.target.phoneme} · {positionLabels[item.target.position]}

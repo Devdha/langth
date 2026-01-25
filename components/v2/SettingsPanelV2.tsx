@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown, Check } from "lucide-react";
 import { GameSettingsV2, LanguageV2, CommunicativeFunction, DiagnosisType, TherapyApproach } from "@/types/v2";
@@ -46,6 +46,54 @@ const AGES = [
 
 const COUNTS = [3, 5, 10, 15, 20];
 
+const StepHeader = ({
+  step,
+  title,
+  isExpanded,
+  onToggle,
+  confirmed,
+}: {
+  step: number;
+  title: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  confirmed: boolean;
+}) => (
+  <button
+    onClick={onToggle}
+    className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${
+      confirmed
+        ? "bg-green-50 border-2 border-green-200"
+        : isExpanded
+          ? "bg-purple-50 border-2 border-purple-300"
+          : "bg-gray-50 border-2 border-gray-100 hover:border-gray-200"
+    }`}
+  >
+    <div
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+        confirmed
+          ? "bg-green-500 text-white"
+          : isExpanded
+            ? "bg-purple-500 text-white"
+            : "bg-gray-300 text-white"
+      }`}
+    >
+      {confirmed ? <Check size={16} /> : step}
+    </div>
+    <span
+      className={`flex-1 text-left font-bold ${
+        confirmed ? "text-green-700" : "text-gray-700"
+      }`}
+    >
+      {title}
+    </span>
+    <ChevronDown
+      size={20}
+      className={`text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+    />
+  </button>
+);
+
 export default function SettingsPanelV2({
   isOpen,
   onClose,
@@ -68,14 +116,6 @@ export default function SettingsPanelV2({
 
   // Current visible step (auto-expands next unconfirmed step)
   const [expandedStep, setExpandedStep] = useState(1);
-
-  // Reset when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setConfirmedSteps(new Set());
-      setExpandedStep(1);
-    }
-  }, [isOpen]);
 
   const confirmStep = (step: number) => {
     setConfirmedSteps(prev => new Set([...prev, step]));
@@ -143,42 +183,6 @@ export default function SettingsPanelV2({
   };
 
   const isStepConfirmed = (step: number) => confirmedSteps.has(step);
-
-  const StepHeader = ({ step, title, isExpanded, onToggle, confirmed }: {
-    step: number;
-    title: string;
-    isExpanded: boolean;
-    onToggle: () => void;
-    confirmed: boolean;
-  }) => (
-    <button
-      onClick={onToggle}
-      className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${
-        confirmed
-          ? 'bg-green-50 border-2 border-green-200'
-          : isExpanded
-            ? 'bg-purple-50 border-2 border-purple-300'
-            : 'bg-gray-50 border-2 border-gray-100 hover:border-gray-200'
-      }`}
-    >
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-        confirmed
-          ? 'bg-green-500 text-white'
-          : isExpanded
-            ? 'bg-purple-500 text-white'
-            : 'bg-gray-300 text-white'
-      }`}>
-        {confirmed ? <Check size={16} /> : step}
-      </div>
-      <span className={`flex-1 text-left font-bold ${confirmed ? 'text-green-700' : 'text-gray-700'}`}>
-        {title}
-      </span>
-      <ChevronDown
-        size={20}
-        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-      />
-    </button>
-  );
 
   return (
     <AnimatePresence>

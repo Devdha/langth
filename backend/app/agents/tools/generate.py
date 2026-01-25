@@ -260,6 +260,26 @@ def _normalize_sentence(sentence: str) -> str:
     s = re.sub(r"^\d+[\.\)]\s*", "", s)
     # Remove surrounding quotes
     s = s.strip("\"'")
+    if re.search(r"[가-힣]", s):
+        s = _normalize_korean_spacing(s)
+    return s
+
+
+def _normalize_korean_spacing(text: str) -> str:
+    """Normalize common Korean spacing artifacts from model outputs."""
+    s = text
+    # Join copula/question endings like "뭐 야" -> "뭐야"
+    s = re.sub(
+        r"(뭐|왜|어디|누구|이거|저거|그거|여기|거기)\s+(야|니|냐|지|죠)",
+        r"\1\2",
+        s,
+    )
+    # Join auxiliary forms like "해 줘" -> "해줘", "보여 줘요" -> "보여줘요"
+    s = re.sub(
+        r"([가-힣]+)\s+(줘(?:요)?|줬(?:어|어요)|줄(?:래|게|까)|주(?:라|면|고|지|세요))",
+        r"\1\2",
+        s,
+    )
     return s
 
 

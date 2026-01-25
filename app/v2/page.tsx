@@ -56,6 +56,7 @@ export default function V2Page() {
   // UI state
   const [currentMode, setCurrentMode] = useState<GameMode>("list");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsPanelKey, setSettingsPanelKey] = useState(0);
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -188,7 +189,13 @@ export default function V2Page() {
     setSessions((prev) => [session, ...prev]);
     setCurrentSession(session);
     setIsNewSessionModalOpen(false);
+    setSettingsPanelKey((prev) => prev + 1);
     setIsSettingsOpen(true); // Open settings for new session
+  };
+
+  const openSettingsPanel = () => {
+    setSettingsPanelKey((prev) => prev + 1);
+    setIsSettingsOpen(true);
   };
 
   const handleSelectSession = (session: TherapySession) => {
@@ -324,7 +331,7 @@ export default function V2Page() {
       <Header
         currentMode={currentMode}
         onModeChange={setCurrentMode}
-        onNewGame={() => currentSession && setIsSettingsOpen(true)}
+        onNewGame={() => currentSession && openSettingsPanel()}
         isV2={true}
       />
 
@@ -395,7 +402,7 @@ export default function V2Page() {
                   onDuplicate={() => handleDuplicateSession(currentSession.id)}
                   onDelete={() => handleDeleteSession(currentSession.id)}
                   onRename={handleRenameSession}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  onOpenSettings={() => openSettingsPanel()}
                 />
 
                 {/* Warning message */}
@@ -448,7 +455,7 @@ export default function V2Page() {
                         <div className="text-6xl mb-4">😢</div>
                         <p className="text-xl font-bold text-red-500 mb-4">{error}</p>
                         <button
-                          onClick={() => setIsSettingsOpen(true)}
+                          onClick={() => openSettingsPanel()}
                           className="px-6 py-3 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-colors"
                         >
                           다시 시도하기
@@ -467,7 +474,7 @@ export default function V2Page() {
                           문장을 생성해보세요
                         </p>
                         <button
-                          onClick={() => setIsSettingsOpen(true)}
+                          onClick={() => openSettingsPanel()}
                           className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg transition-all"
                         >
                           문장 생성하기
@@ -500,7 +507,7 @@ export default function V2Page() {
                           </h2>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => setIsSettingsOpen(true)}
+                              onClick={() => openSettingsPanel()}
                               className="px-4 py-2 text-sm font-bold text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                             >
                               + 더 생성하기
@@ -550,7 +557,7 @@ export default function V2Page() {
 
       {currentSession && (
         <SettingsPanelV2
-          key={currentSession.id}
+          key={`${currentSession.id}-${settingsPanelKey}`}
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           onGenerate={handleGenerate}

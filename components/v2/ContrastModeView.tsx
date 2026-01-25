@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2 } from "lucide-react";
 
@@ -48,14 +48,28 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
   const categories = currentLanguage === "en" ? CATEGORIES_EN : CATEGORIES_KO;
   const defaultCategory = currentLanguage === "en" ? "voicingContrast" : "aspirationContrast";
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(defaultCategory);
-  const [selectedPhonemePair, setSelectedPhonemePair] = useState<string | null>(null);
+  const getFirstPhonemePair = (
+    categoryId: string,
+    languageOverride?: "ko" | "en"
+  ) => {
+    const data =
+      languageOverride === "en"
+        ? englishMinimalPairs
+        : languageOverride === "ko"
+          ? koreanMinimalPairs
+          : minimalPairsData;
+    const category = (data.minimalPairs as Record<string, unknown>)[categoryId] as
+      | Record<string, unknown>
+      | undefined;
+    if (!category) return null;
+    const keys = Object.keys(category).filter((key) => key !== "_description");
+    return keys[0] ?? null;
+  };
 
-  // Reset category when language changes
-  useEffect(() => {
-    setSelectedCategory(defaultCategory);
-    setSelectedPhonemePair(null);
-  }, [currentLanguage, defaultCategory]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(defaultCategory);
+  const [selectedPhonemePair, setSelectedPhonemePair] = useState<string | null>(
+    getFirstPhonemePair(defaultCategory)
+  );
 
   // Get phoneme pairs for selected category
   const phonemePairs = useMemo(() => {
@@ -64,13 +78,6 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
 
     return Object.keys(category).filter(key => key !== "_description");
   }, [selectedCategory, minimalPairsData]);
-
-  // Auto-select first phoneme pair when category changes
-  useEffect(() => {
-    if (phonemePairs.length > 0) {
-      setSelectedPhonemePair(phonemePairs[0]);
-    }
-  }, [phonemePairs]);
 
   // Get word pairs for selected phoneme pair
   const wordPairs = useMemo((): WordPair[] => {
@@ -88,7 +95,7 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
   // Handle category change
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    setSelectedPhonemePair(null); // Reset phoneme pair selection
+    setSelectedPhonemePair(getFirstPhonemePair(categoryId));
   };
 
   // TTS function
@@ -121,7 +128,16 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
         </h2>
         <div className="flex bg-gray-100 rounded-full p-1">
           <button
-            onClick={() => setCurrentLanguage("ko")}
+            onClick={() => {
+              const nextLanguage: "ko" | "en" = "ko";
+              const nextDefaultCategory =
+                nextLanguage === "en" ? "voicingContrast" : "aspirationContrast";
+              setCurrentLanguage(nextLanguage);
+              setSelectedCategory(nextDefaultCategory);
+              setSelectedPhonemePair(
+                getFirstPhonemePair(nextDefaultCategory, nextLanguage)
+              );
+            }}
             className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
               currentLanguage === "ko"
                 ? "bg-white text-pink-600 shadow-sm"
@@ -131,7 +147,16 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
             한국어
           </button>
           <button
-            onClick={() => setCurrentLanguage("en")}
+            onClick={() => {
+              const nextLanguage: "ko" | "en" = "en";
+              const nextDefaultCategory =
+                nextLanguage === "en" ? "voicingContrast" : "aspirationContrast";
+              setCurrentLanguage(nextLanguage);
+              setSelectedCategory(nextDefaultCategory);
+              setSelectedPhonemePair(
+                getFirstPhonemePair(nextDefaultCategory, nextLanguage)
+              );
+            }}
             className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
               currentLanguage === "en"
                 ? "bg-white text-pink-600 shadow-sm"

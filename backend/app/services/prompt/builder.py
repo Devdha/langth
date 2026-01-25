@@ -179,6 +179,73 @@ POSITION_DESCRIPTIONS: dict[PhonemePosition, dict[str, str]] = {
 }
 
 
+def _get_contrast_explanation_ko(approach_value: str) -> str:
+    """Get Korean explanation for contrast-based therapy approach.
+
+    Returns appropriate phonological feature constraints for
+    minimal pairs vs maximal oppositions.
+
+    Note: This function is preserved for future use in a separate
+    word-pair discrimination mode.
+    """
+    if approach_value == "minimal_pairs":
+        return """- **최소대립쌍**: 단 하나의 음운 자질만 다른 단어 쌍을 생성합니다
+- 음운 자질: 조음위치, 조음방법, 기식성/긴장성 중 **하나만** 달라야 합니다
+- 올바른 예시:
+  - 'ㄱ' vs 'ㅋ' (기식성만 다름) → '감' vs '캄'
+  - 'ㄱ' vs 'ㄷ' (조음위치만 다름) → '공' vs '동'
+  - 'ㄴ' vs 'ㅁ' (조음위치만 다름) → '눈' vs '뭄'
+  - 'ㄹ' vs 'ㄴ' (조음방법만 다름) → '라면' vs '나면'
+- 잘못된 예시 (여러 자질이 다름):
+  - 'ㄱ' vs 'ㅁ' ❌ (조음위치 + 조음방법 모두 다름)
+  - 'ㅂ' vs 'ㄹ' ❌ (조음위치 + 조음방법 모두 다름)"""
+    else:  # MAXIMAL_OPPOSITIONS
+        return """- **최대대립**: 여러 음운 자질이 다른 단어 쌍을 생성합니다
+- 음운 자질: 조음위치, 조음방법, 기식성/긴장성 중 **2개 이상** 달라야 합니다
+- 올바른 예시:
+  - 'ㄱ' vs 'ㅁ' (조음위치 + 조음방법 다름) → '곰' vs '몸'
+  - 'ㅂ' vs 'ㄹ' (조음위치 + 조음방법 다름) → '밤' vs '람'
+  - 'ㅅ' vs 'ㅁ' (조음위치 + 조음방법 다름) → '손' vs '몬'
+  - 'ㅈ' vs 'ㄴ' (조음위치 + 조음방법 다름) → '잔' vs '난'
+- 잘못된 예시 (하나의 자질만 다름):
+  - 'ㄱ' vs 'ㅋ' ❌ (기식성만 다름 - 최소대립쌍임)
+  - 'ㄴ' vs 'ㅁ' ❌ (조음위치만 다름 - 최소대립쌍임)"""
+
+
+def _get_contrast_explanation_en(approach_value: str) -> str:
+    """Get English explanation for contrast-based therapy approach.
+
+    Returns appropriate phonological feature constraints for
+    minimal pairs vs maximal oppositions.
+
+    Note: This function is preserved for future use in a separate
+    word-pair discrimination mode.
+    """
+    if approach_value == "minimal_pairs":
+        return """- **Minimal pairs**: Generate word pairs that differ by ONLY ONE phonological feature
+- Features: place, manner, or voicing - only **ONE** should differ
+- Correct examples:
+  - /p/ vs /b/ (voicing only) → 'pat' vs 'bat'
+  - /t/ vs /d/ (voicing only) → 'tin' vs 'din'
+  - /s/ vs /z/ (voicing only) → 'sip' vs 'zip'
+  - /k/ vs /g/ (voicing only) → 'coat' vs 'goat'
+  - /f/ vs /v/ (voicing only) → 'fan' vs 'van'
+- Incorrect examples (multiple features differ):
+  - /p/ vs /n/ ❌ (place + manner both differ)
+  - /s/ vs /m/ ❌ (place + manner both differ)"""
+    else:  # MAXIMAL_OPPOSITIONS
+        return """- **Maximal oppositions**: Generate word pairs that differ by MULTIPLE phonological features
+- Features: place, manner, AND/OR voicing - **2 or more** should differ
+- Correct examples:
+  - /p/ vs /n/ (place + manner differ) → 'pat' vs 'nat'
+  - /s/ vs /m/ (place + manner differ) → 'sun' vs 'mum'
+  - /f/ vs /n/ (place + manner differ) → 'fun' vs 'nun'
+  - /k/ vs /m/ (place + manner differ) → 'cap' vs 'map'
+- Incorrect examples (only one feature differs):
+  - /p/ vs /b/ ❌ (voicing only - this is a minimal pair)
+  - /t/ vs /d/ ❌ (voicing only - this is a minimal pair)"""
+
+
 def build_generation_prompt(request: GenerateRequestV2, batch_size: int) -> str:
     """Build a prompt for therapy sentence generation.
 
@@ -187,9 +254,11 @@ def build_generation_prompt(request: GenerateRequestV2, batch_size: int) -> str:
     communicative function.
 
     Routes to different prompt builders based on therapy approach:
-    - minimal_pairs/maximal_oppositions -> _build_contrast_prompt
     - complexity -> _build_complexity_prompt
     - core_vocabulary -> _build_core_vocab_prompt
+
+    Note: minimal_pairs/maximal_oppositions are planned for a separate
+    word-pair discrimination mode (not sentence generation).
 
     Args:
         request: The generation request containing all parameters.
@@ -206,7 +275,7 @@ def build_generation_prompt(request: GenerateRequestV2, batch_size: int) -> str:
         ...     target=TargetConfig(phoneme="ㄹ", position=PhonemePosition.ONSET),
         ...     sentenceLength=4,
         ...     diagnosis=DiagnosisType.SSD,
-        ...     therapyApproach=TherapyApproach.MINIMAL_PAIRS,
+        ...     therapyApproach=TherapyApproach.COMPLEXITY,
         ... )
         >>> prompt = build_generation_prompt(request, batch_size=30)
         >>> "한국어" in prompt
@@ -215,12 +284,7 @@ def build_generation_prompt(request: GenerateRequestV2, batch_size: int) -> str:
     lang = "ko" if request.language == Language.KO else "en"
 
     # Route based on therapy approach
-    if request.therapyApproach in (
-        TherapyApproach.MINIMAL_PAIRS,
-        TherapyApproach.MAXIMAL_OPPOSITIONS,
-    ):
-        return _build_contrast_prompt(request, batch_size, lang)
-    elif request.therapyApproach == TherapyApproach.COMPLEXITY:
+    if request.therapyApproach == TherapyApproach.COMPLEXITY:
         return _build_complexity_prompt(request, batch_size, lang)
     elif request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
         return _build_core_vocab_prompt(request, batch_size, lang)
@@ -270,6 +334,35 @@ def _get_common_context(request: GenerateRequestV2, lang: str) -> dict[str, str]
         "theme_section": theme_section,
         "function_section": function_section,
     }
+
+
+def _get_example_tokens(token_count: int, phoneme: str, lang: str) -> str:
+    """Get example tokens array matching the token count and phoneme.
+
+    Args:
+        token_count: The required number of tokens.
+        phoneme: The target phoneme.
+        lang: Language code ("ko" or "en").
+
+    Returns:
+        A JSON array string with example tokens.
+    """
+    en_examples = {
+        2: '["Cat", "runs"]',
+        3: '["The", "cat", "runs"]',
+        4: '["The", "cat", "runs", "fast"]',
+        5: '["The", "big", "cat", "runs", "fast"]',
+        6: '["The", "big", "cat", "runs", "very", "fast"]',
+    }
+    ko_examples = {
+        2: '["고양이가", "뛰어요"]',
+        3: '["고양이가", "빨리", "뛰어요"]',
+        4: '["귀여운", "고양이가", "빨리", "뛰어요"]',
+        5: '["귀여운", "고양이가", "아주", "빨리", "뛰어요"]',
+        6: '["귀여운", "작은", "고양이가", "아주", "빨리", "뛰어요"]',
+    }
+    examples = ko_examples if lang == "ko" else en_examples
+    return examples.get(token_count, en_examples[3])
 
 
 def _generate_token_examples(token_count: int, lang: str) -> str:
@@ -347,6 +440,9 @@ def _build_contrast_prompt(
     This approach generates pairs of words/sentences that differ by one phoneme,
     helping children distinguish between similar sounds.
 
+    Note: This function is preserved for future use in a separate
+    word-pair discrimination mode. Currently not called.
+
     Args:
         request: The generation request.
         batch_size: Number of contrast pairs to generate.
@@ -356,13 +452,11 @@ def _build_contrast_prompt(
         A prompt string for contrast-based therapy.
     """
     ctx = _get_common_context(request, lang)
-    approach_name = (
-        "최소대립쌍" if request.therapyApproach == TherapyApproach.MINIMAL_PAIRS else "최대대립"
-    )
+    # Use string value for approach comparison (enum removed from TherapyApproach)
+    approach_value = request.therapyApproach.value
+    approach_name = "최소대립쌍" if approach_value == "minimal_pairs" else "최대대립"
     approach_name_en = (
-        "minimal pairs"
-        if request.therapyApproach == TherapyApproach.MINIMAL_PAIRS
-        else "maximal oppositions"
+        "minimal pairs" if approach_value == "minimal_pairs" else "maximal oppositions"
     )
 
     if lang == "ko":
@@ -387,8 +481,7 @@ def _build_contrast_prompt(
 - 치료 접근법: {approach_name}{ctx['theme_section']}{ctx['function_section']}
 
 ## {approach_name} 설명
-- 목표 음소와 대조 음소가 포함된 단어 쌍을 생성합니다
-- 예: '라면' vs '나면', '달' vs '탈'
+{_get_contrast_explanation_ko(approach_value)}
 - 각 세트에는 목표 단어와 대조 단어, 그리고 각각을 포함한 문장이 필요합니다
 
 ## 중요 지침
@@ -435,8 +528,7 @@ Please generate {batch_size} contrast sets for {approach_name_en} therapy.
 - Therapy approach: {approach_name_en}{ctx['theme_section']}{ctx['function_section']}
 
 ## {approach_name_en.title()} Explanation
-- Generate word pairs containing the target phoneme and a contrasting phoneme
-- Example: 'rat' vs 'bat', 'sun' vs 'fun'
+{_get_contrast_explanation_en(approach_value)}
 - Each set needs target word, contrast word, and sentences containing each
 
 ## Important Guidelines
@@ -503,9 +595,66 @@ def _build_complexity_prompt(
 - 치료 접근법: 복잡성 접근법{ctx['theme_section']}{ctx['function_section']}
 
 ## 복잡성 접근법 설명
-- easy: 목표 음소가 단순한 위치에 있고 주변 음소가 쉬운 경우
-- medium: 목표 음소가 자음군이나 약간 복잡한 환경에 있는 경우
-- hard: 목표 음소가 복잡한 자음군이나 어려운 음운 환경에 있는 경우
+음운 환경의 복잡도에 따라 난이도가 결정됩니다:
+
+**easy** - 단순한 음운 환경:
+- 어두 초성 + 모음: "라면", "노래"
+- 단순 음절 구조: CV, CVC
+- 예: "라면 먹어요", "노래해요"
+
+**medium** - 약간 복잡한 환경:
+- 어중 위치: "우리", "머리"
+- 겹받침 앞/뒤: "닭", "읽다"
+- 예: "우리 집이에요", "머리 빗어요"
+
+**hard** - 복잡한 음운 환경:
+- 자음 연쇄: "쓸쓸", "글씨"
+- 여러 번 출현: "라라라", "달려라"
+- 예: "글씨를 써요", "달려가요"
+
+**필수 요구사항**:
+- 약 1/3 easy, 1/3 medium, 1/3 hard 비율로 생성
+- {batch_size}개 문장: ~{batch_size//3} easy, ~{batch_size//3} medium, ~{batch_size//3} hard
+- 특정 난이도에 치우치지 마세요
+
+## 피해야 할 패턴 (매우 중요!)
+
+아래 패턴은 절대 생성하지 마세요:
+
+❌ **어른 말투**: "라면이 너무 맛있어요", "사과가 정말 달콤합니다"
+   → 아이는 "라면 맛있어!", "사과 달아~"처럼 말합니다
+
+❌ **의미 반복**: "맛있는 라면을 맛있게 먹어요", "예쁜 꽃이 예뻐요"
+   → 같은 어근(맛있-, 예쁘-)이 반복되면 안 됩니다
+
+❌ **맥락 없는 문장**: "라면을 먹어요", "공을 던져요"
+   → 누가? 왜? 맥락이 있어야 합니다
+
+❌ **같은 구조 반복**: "~가 ~를 ~해요" 패턴만 사용
+   → 다양한 문장 구조를 사용하세요
+
+❌ **명사구만**: "엄마 마음", "맛있는 소시지 세 개"
+   → 서술어(동사/형용사)가 반드시 포함되어야 합니다
+   → 짧은 문장도 완전한 문장이어야 함: "밥 줘", "엄마 봐"
+
+## 좋은 문장 예시
+
+✅ **자연스러운 아이 말투**:
+- "엄마, 라면 먹고 싶어!" (요청 + 호칭)
+- "우와, 라면이다!" (감탄)
+- "이거 라면이야?" (질문)
+- "라면 다 먹었어~" (보고)
+
+✅ **다양한 문장 구조**:
+- 요청문: "라면 주세요", "라면 먹을래"
+- 질문문: "라면 맛있어?", "라면 뜨거워?"
+- 감탄문: "라면 냄새 좋다!", "라면 맛있다~"
+- 서술문: "나 라면 좋아해", "라면 다 먹었어"
+
+✅ **짧은 문장도 완전한 문장으로** (2-3토큰):
+- 2토큰: "밥 줘", "엄마 봐", "이거 뭐야?", "라면 맛있어!"
+- 3토큰: "나 배고파", "엄마 어디야?", "이거 내 거야"
+- ❌ 틀린 예: "엄마 마음" (명사구), "맛있는 라면" (명사구)
 
 ## 중요 지침
 
@@ -513,6 +662,7 @@ def _build_complexity_prompt(
 2. **난이도 분포**: easy, medium, hard를 균등하게 분배
 3. **아동 적절성**: 긍정적이고 안전한 내용만 생성
 4. **target_analysis**: 목표 음소가 어떤 음운 환경에서 나타나는지 설명
+5. **다양성**: 문장 구조와 어휘를 다양하게 사용하세요
 
 ## 출력 형식
 
@@ -520,7 +670,7 @@ def _build_complexity_prompt(
 ```json
 {{"items": [
   {{
-    "tokens": ["라면을", "맛있게", "먹어요"],
+    "tokens": ["엄마,", "라면", "먹고", "싶어!"],
     "difficulty": "easy",
     "target_analysis": {{
       "phoneme": "ㄹ",
@@ -557,9 +707,26 @@ Please generate {batch_size} sentences for complexity-based therapy with varying
 - Therapy approach: complexity approach{ctx['theme_section']}{ctx['function_section']}
 
 ## Complexity Approach Explanation
-- easy: Target phoneme in simple position with easy surrounding phonemes
-- medium: Target phoneme in consonant clusters or slightly complex environments
-- hard: Target phoneme in complex clusters or difficult phonological environments
+Difficulty is determined by phonological environment complexity:
+
+**easy** - Target phoneme in simple, isolated position:
+- Word-initial before vowel: "sun", "red", "kite"
+- Word-final after vowel: "bus", "car", "book"
+- Simple CVC words: "sit", "run", "cat"
+
+**medium** - Target phoneme in simple consonant blends:
+- Two-consonant blends: "sleep", "blue", "green", "stop"
+- Initial blends: "bring", "slide", "clap"
+
+**hard** - Target phoneme in complex clusters or challenging environments:
+- Three-consonant clusters: "string", "spring", "splash"
+- Medial clusters: "faster", "sister"
+- Multiple occurrences: "scissors", "rooster"
+
+**CRITICAL REQUIREMENT**:
+- Generate approximately 1/3 easy, 1/3 medium, 1/3 hard sentences
+- For {batch_size} sentences: ~{batch_size//3} easy, ~{batch_size//3} medium, ~{batch_size//3} hard
+- Do NOT bias towards any single difficulty level
 
 ## Important Guidelines
 
@@ -574,10 +741,10 @@ Output MUST be in the following JSON format only:
 ```json
 {{"items": [
   {{
-    "tokens": ["The", "rabbit", "runs", "fast"],
+    "tokens": {_get_example_tokens(request.sentenceLength, request.target.phoneme if request.target else "K", "en")},
     "difficulty": "easy",
     "target_analysis": {{
-      "phoneme": "r",
+      "phoneme": "{request.target.phoneme if request.target else 'K'}",
       "position": "onset",
       "environment": "word-initial, before vowel",
       "complexity_reason": "simple phonological environment"
@@ -629,19 +796,46 @@ def _build_core_vocab_prompt(
 - {ctx['age_guideline']}
 {ctx['theme_section']}{ctx['function_section']}
 
+## 피해야 할 패턴 (매우 중요!)
+
+❌ **어른 말투**: "물을 마시고 싶습니다", "간식을 주세요"
+   → 아이는 "물 줘!", "까까 줘~"처럼 말합니다
+
+❌ **의미 반복**: "더 더 줘", "싫어 싫어"
+   → 같은 단어가 반복되면 안 됩니다
+
+❌ **맥락 없는 문장**: "줘", "싫어"
+   → 뭘? 왜? 맥락이 있어야 합니다
+
+❌ **같은 구조 반복**: "~를 ~해요" 패턴만 사용
+   → 다양한 문장 구조를 사용하세요
+
+❌ **명사구만**: "엄마 손", "맛있는 까까"
+   → 서술어가 반드시 포함되어야 합니다
+   → 짧아도 완전한 문장: "손 잡아", "까까 줘"
+
 ## 좋은 예시
-- ["엄마", "물", "줘"] (줘 포함)
-- ["까까", "더", "줘"] (더 포함)
-- ["또", "하고", "싶어"] (또 포함)
-- ["이거", "싫어"] (싫어 포함)
+
+✅ **자연스러운 아이 말투**:
+- ["엄마,", "물", "줘"] (요청 + 호칭)
+- ["까까", "더", "줘!"] (요청)
+- ["이거", "뭐야?"] (질문)
+- ["싫어,", "안", "해!"] (거부)
+
+✅ **다양한 문장 구조**:
+- 요청: "엄마 물 줘", "이거 줘"
+- 질문: "이거 뭐야?", "어디 가?"
+- 거부: "싫어!", "안 해"
+- 감탄: "우와, 이거 봐!"
 
 ## 나쁜 예시 (금지)
 - ["아니", "응가", "아니"] - 의미 없음
 - ["멍멍", "야옹", "삐약"] - 의성어만 나열
 - ["고양이가", "밥", "먹어요"] - 핵심 어휘 없음
+- ["물을", "마시고", "싶어요"] - 어른 말투
 
 ## 출력 형식 (JSON만)
-{{"items": [{{"core_word": "줘", "tokens": ["엄마", "물", "줘"]}}]}}"""
+{{"items": [{{"core_word": "줘", "tokens": ["엄마,", "물", "줘"]}}]}}"""
 
     else:
         return f"""Generate {batch_size} therapy sentences for children.

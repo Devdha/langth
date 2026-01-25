@@ -6,7 +6,8 @@ Generate -> Validate -> Score -> Diversify 파이프라인을 실행합니다.
 import logging
 import time
 import uuid
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, field
 
 from app.api.v2.schemas import (
     GenerateRequestV2,
@@ -18,11 +19,122 @@ from app.agents.tools import (
     validate_sentences,
     get_passed_sentences,
     score_sentences,
-    diversify_results,
 )
-from app.agents.guardrails import filter_unsafe_sentences, is_safe_sentence
+# Guardrail 제거됨 - 치료사가 직접 검토
+from app.api.v2.schemas import Language
+from app.services.phoneme.korean import find_phoneme_matches
+from app.services.phoneme.english import find_phoneme_matches_en
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class PipelineMetrics:
+    """파이프라인 품질 지표.
+
+    Attributes:
+        generated_count: LLM이 생성한 총 문장 수
+        validation_passed: Validation 통과 문장 수
+        validation_rate: Validation 통과율 (%)
+        fail_reasons: 실패 이유별 카운트
+        unique_structures: 고유 문장 구조 수
+        vocabulary_diversity: 어휘 다양성 (고유 명사 / 총 명사)
+        semantic_duplicates: 의미 반복으로 탈락한 문장 수
+        final_count: 최종 후보 수
+    """
+    generated_count: int = 0
+    validation_passed: int = 0
+    validation_rate: float = 0.0
+    fail_reasons: dict[str, int] = field(default_factory=dict)
+    unique_structures: int = 0
+    vocabulary_diversity: float = 0.0
+    semantic_duplicates: int = 0
+    final_count: int = 0
+
+
+def _calculate_metrics(
+    all_candidates: list[dict],
+    validation_results: list,
+    scored: list,
+    language: Language,
+) -> PipelineMetrics:
+    """파이프라인 품질 지표를 계산합니다.
+
+    Args:
+        all_candidates: 생성된 모든 후보
+        validation_results: Validation 결과
+        scored: 최종 점수 매긴 문장들
+        language: 언어
+
+    Returns:
+        PipelineMetrics
+    """
+    from app.agents.tools.score import _extract_sentence_structure, _extract_nouns
+
+    metrics = PipelineMetrics()
+    metrics.generated_count = len(all_candidates)
+    metrics.validation_passed = sum(1 for r in validation_results if r.passed)
+    metrics.validation_rate = (
+        (metrics.validation_passed / metrics.generated_count * 100)
+        if metrics.generated_count > 0 else 0.0
+    )
+
+    # 실패 이유 집계
+    for r in validation_results:
+        if not r.passed and r.fail_reason:
+            # 실패 이유에서 카테고리 추출
+            if "word_count" in r.fail_reason:
+                key = "word_count"
+            elif "phoneme" in r.fail_reason:
+                key = "phoneme"
+            elif "semantic_repetition" in r.fail_reason:
+                key = "semantic_repetition"
+                metrics.semantic_duplicates += 1
+            elif "no_predicate" in r.fail_reason:
+                key = "no_predicate"
+            elif "core_vocabulary" in r.fail_reason:
+                key = "core_vocabulary"
+            else:
+                key = "other"
+            metrics.fail_reasons[key] = metrics.fail_reasons.get(key, 0) + 1
+
+    # 구조 다양성 계산
+    structures = set()
+    all_nouns: list[str] = []
+
+    for item in scored:
+        structure = _extract_sentence_structure(item.sentence, language)
+        structures.add(structure)
+
+        nouns = _extract_nouns(item.sentence, language)
+        all_nouns.extend(nouns)
+
+    metrics.unique_structures = len(structures)
+
+    # 어휘 다양성 계산
+    if all_nouns:
+        unique_nouns = len(set(all_nouns))
+        metrics.vocabulary_diversity = unique_nouns / len(all_nouns) * 100
+
+    metrics.final_count = len(scored)
+
+    return metrics
+
+
+def _log_metrics(metrics: PipelineMetrics) -> None:
+    """파이프라인 지표를 로깅합니다."""
+    fail_str = ", ".join(f"{k}={v}" for k, v in metrics.fail_reasons.items())
+
+    logger.info(
+        f"\n[Pipeline 리포트]\n"
+        f"  - 생성: {metrics.generated_count}개\n"
+        f"  - Validation 통과: {metrics.validation_passed}개 ({metrics.validation_rate:.0f}%)\n"
+        f"  - 실패 이유: {fail_str or '없음'}\n"
+        f"  - 구조 다양성: {metrics.unique_structures}종류\n"
+        f"  - 어휘 다양성: {metrics.vocabulary_diversity:.0f}%\n"
+        f"  - 의미 반복 탈락: {metrics.semantic_duplicates}개\n"
+        f"  - 최종 후보: {metrics.final_count}개"
+    )
 
 
 @dataclass
@@ -34,17 +146,19 @@ class PipelineResult:
         items: 생성된 치료 아이템들
         contrast_sets: 생성된 대조 세트들 (선택)
         meta: 메타 정보 (requestedCount, generatedCount, averageScore, processingTimeMs)
+        metrics: 파이프라인 품질 지표 (선택)
     """
 
     success: bool
     items: list[TherapyItemV2]
     contrast_sets: list[dict] | None
     meta: dict
+    metrics: PipelineMetrics | None = None
 
 
 async def run_pipeline(
     request: GenerateRequestV2,
-    max_attempts: int = 3,
+    max_attempts: int = 1,
 ) -> PipelineResult:
     """4단계 파이프라인을 실행합니다.
 
@@ -66,6 +180,8 @@ async def run_pipeline(
         True
     """
     start_time = time.time()
+    all_candidates: list[dict] = []  # 지표용: 생성된 모든 후보
+    all_validation_results: list = []  # 지표용: 모든 validation 결과
     all_validated: list[dict] = []
     all_contrast_sets: list[dict] = []
 
@@ -75,14 +191,19 @@ async def run_pipeline(
         f"[Pipeline] 시작 - count={request.count}, {target_info}, approach={request.therapyApproach}"
     )
 
+    # 유저 선택용으로 더 많은 후보 생성 (요청의 3배)
+    target_candidates = request.count * 3
+
     # 재시도 루프
     for attempt in range(max_attempts):
         # 1. Generate
-        batch_size = (request.count - len(all_validated)) * 3
+        batch_size = target_candidates - len(all_validated)
         if batch_size <= 0:
-            logger.info(f"[Pipeline] 시도 {attempt+1}: 충분한 문장 확보, 생성 스킵")
+            logger.info(f"[Pipeline] 시도 {attempt+1}: 충분한 후보 확보, 생성 스킵")
             break
 
+        # LLM 통과율 고려하여 더 많이 요청
+        batch_size = int(batch_size * 1.5)
         logger.info(f"[Pipeline] 시도 {attempt+1}/{max_attempts}: batch_size={batch_size}")
 
         gen_start = time.time()
@@ -90,30 +211,23 @@ async def run_pipeline(
             gen_result = await generate_candidates(request, batch_size)
             candidates, contrast_sets = _normalize_generation_result(gen_result)
             gen_time = int((time.time() - gen_start) * 1000)
-            logger.info(f"[Generate] 완료 - {len(candidates)}개 생성, {gen_time}ms")
+            logger.info(f"[Generate] 완료 - {len(candidates)}개 생성, contrast_sets={len(contrast_sets)}개, {gen_time}ms")
         except Exception as e:
             gen_time = int((time.time() - gen_start) * 1000)
             logger.error(f"[Generate] 실패 - {gen_time}ms, error: {e}")
             continue
 
-        # 가드레일: 안전하지 않은 문장 필터링
-        guard_start = time.time()
-        safe_candidates = filter_unsafe_sentences(candidates)
-        safe_contrast_sets = _filter_contrast_sets(contrast_sets)
-        guard_time = int((time.time() - guard_start) * 1000)
-        filtered_count = len(candidates) - len(safe_candidates)
-        if filtered_count > 0:
-            logger.warning(f"[Guardrail] {filtered_count}개 필터링됨, {guard_time}ms")
-        else:
-            logger.debug(f"[Guardrail] 완료 - {guard_time}ms")
-
-        # 2. Validate
+        # 2. Validate (Guardrail 제거 - 치료사가 직접 검토)
         val_start = time.time()
-        results = validate_sentences(safe_candidates, request)
+        results = validate_sentences(candidates, request)
         passed = get_passed_sentences(results)
         val_time = int((time.time() - val_start) * 1000)
 
-        failed_count = len(safe_candidates) - len(passed)
+        # 지표용 데이터 수집
+        all_candidates.extend(candidates)
+        all_validation_results.extend(results)
+
+        failed_count = len(candidates) - len(passed)
         if failed_count > 0:
             # 실패 이유 로깅
             fail_reasons = {}
@@ -124,52 +238,56 @@ async def run_pipeline(
                         key = "word_count"
                     elif "phoneme" in r.fail_reason:
                         key = "no_phoneme"
+                    elif "semantic_repetition" in r.fail_reason:
+                        key = "semantic_rep"
+                    elif "no_predicate" in r.fail_reason:
+                        key = "no_predicate"
                     else:
                         key = "other"
                     fail_reasons[key] = fail_reasons.get(key, 0) + 1
             logger.warning(
-                f"[Validate] {len(passed)}/{len(safe_candidates)} 통과, "
+                f"[Validate] {len(passed)}/{len(candidates)} 통과, "
                 f"실패: {fail_reasons}, {val_time}ms"
             )
         else:
-            logger.info(f"[Validate] {len(passed)}/{len(safe_candidates)} 통과, {val_time}ms")
+            logger.info(f"[Validate] {len(passed)}/{len(candidates)} 통과, {val_time}ms")
 
         all_validated.extend(passed)
-        if safe_contrast_sets:
-            passed_texts = {item["sentence"] for item in passed}
-            validated_sets = _validate_contrast_sets(
-                safe_contrast_sets,
-                request,
-                passed_texts,
-            )
+        if contrast_sets:
+            logger.debug(f"[ContrastSet] contrast_sets={len(contrast_sets)}")
+            validated_sets = _validate_contrast_sets(contrast_sets, request)
+            logger.debug(f"[ContrastSet] validated_sets={len(validated_sets)}")
             all_contrast_sets.extend(validated_sets)
             if len(all_contrast_sets) > request.count:
                 del all_contrast_sets[request.count:]
         logger.info(f"[Pipeline] 시도 {attempt+1} 완료: 누적 {len(all_validated)}개")
 
-        # 충분하면 종료
-        if len(all_validated) >= request.count:
+        # 충분한 후보 확보 시 종료
+        if len(all_validated) >= target_candidates:
             break
 
-    # 3. Score
+    # 3. Score (Diversify 제거 - 유저가 직접 선택)
     score_start = time.time()
     scored = score_sentences(all_validated, request)
     score_time = int((time.time() - score_start) * 1000)
     logger.info(f"[Score] {len(scored)}개 점수 계산, {score_time}ms")
 
-    # 4. Diversify
-    div_start = time.time()
-    final = diversify_results(scored, request.count)
-    div_time = int((time.time() - div_start) * 1000)
-    logger.info(f"[Diversify] {len(scored)} -> {len(final)}개, {div_time}ms")
+    # 4. 지표 계산 및 로깅
+    metrics = _calculate_metrics(
+        all_candidates,
+        all_validation_results,
+        scored,
+        request.language,
+    )
+    _log_metrics(metrics)
 
-    # TherapyItemV2로 변환
-    items = [_to_therapy_item(s, request) for s in final]
+    # TherapyItemV2로 변환 (전체 후보 반환)
+    items = [_to_therapy_item(s, request) for s in scored]
 
     processing_time = int((time.time() - start_time) * 1000)
 
     logger.info(
-        f"[Pipeline] 완료 - {len(items)}/{request.count}개 생성, "
+        f"[Pipeline] 완료 - {len(items)}개 후보 생성 (요청: {request.count}개), "
         f"총 {processing_time}ms"
     )
 
@@ -180,11 +298,15 @@ async def run_pipeline(
         meta={
             "requestedCount": request.count,
             "generatedCount": len(items),
-            "averageScore": round(sum(s.score for s in final) / len(final), 2)
-            if final
+            "averageScore": round(sum(s.score for s in scored) / len(scored), 2)
+            if scored
             else 0,
             "processingTimeMs": processing_time,
+            "validationRate": round(metrics.validation_rate, 1),
+            "uniqueStructures": metrics.unique_structures,
+            "vocabularyDiversity": round(metrics.vocabulary_diversity, 1),
         },
+        metrics=metrics,
     )
 
 
@@ -238,46 +360,24 @@ def _normalize_generation_result(result) -> tuple[list[dict] | list[str], list[d
     return candidates, contrast_sets or []
 
 
-def _filter_contrast_sets(contrast_sets: list[dict]) -> list[dict]:
-    if not contrast_sets:
-        return []
-
-    safe_sets = []
-    for contrast_set in contrast_sets:
-        target_sentence = contrast_set.get("targetSentence", {})
-        contrast_sentence = contrast_set.get("contrastSentence", {})
-        target_text = target_sentence.get("text")
-        contrast_text = contrast_sentence.get("text")
-        if not isinstance(target_text, str) or not isinstance(contrast_text, str):
-            continue
-        if is_safe_sentence(target_text) and is_safe_sentence(contrast_text):
-            safe_sets.append(contrast_set)
-
-    return safe_sets
-
-
 def _validate_contrast_sets(
     contrast_sets: list[dict],
     request: GenerateRequestV2,
-    passed_texts: set[str],
 ) -> list[dict]:
     """Validate contrast sets for minimal/maximal oppositions.
 
-    - Target sentence must pass phoneme validation (exists in passed_texts).
+    - Target sentence must pass phoneme validation directly.
     - Both sentences must respect token length.
     - Target/contrast words must appear in their respective token lists.
     """
     validated: list[dict] = []
-    for contrast_set in contrast_sets:
+    for i, contrast_set in enumerate(contrast_sets):
         target_sentence = contrast_set.get("targetSentence", {})
         contrast_sentence = contrast_set.get("contrastSentence", {})
         target_text = target_sentence.get("text")
         contrast_text = contrast_sentence.get("text")
         if not isinstance(target_text, str) or not isinstance(contrast_text, str):
-            continue
-
-        # Require target sentence to pass phoneme validation
-        if target_text not in passed_texts:
+            logger.debug(f"[ContrastSet #{i}] 실패: text 타입 오류")
             continue
 
         target_tokens = target_sentence.get("tokens", [])
@@ -288,13 +388,42 @@ def _validate_contrast_sets(
             or len(target_tokens) != request.sentenceLength
             or len(contrast_tokens) != request.sentenceLength
         ):
+            logger.debug(
+                f"[ContrastSet #{i}] 실패: 토큰 수 불일치 - "
+                f"target={len(target_tokens)}, contrast={len(contrast_tokens)}, expected={request.sentenceLength}"
+            )
             continue
+
+        # Validate target sentence has required phoneme
+        if request.target and request.target.phoneme:
+            if request.language == Language.KO:
+                match_result = find_phoneme_matches(
+                    target_text,
+                    request.target.phoneme,
+                    request.target.position.value,
+                    request.target.minOccurrences,
+                )
+            else:
+                match_result = find_phoneme_matches_en(
+                    target_text,
+                    request.target.phoneme,
+                    request.target.minOccurrences,
+                )
+            if not match_result.meets_minimum:
+                logger.debug(
+                    f"[ContrastSet #{i}] 실패: 음소 불충분 - "
+                    f"text='{target_text}', found={match_result.count}, need={request.target.minOccurrences}"
+                )
+                continue
 
         target_word = contrast_set.get("targetWord", "")
         contrast_word = contrast_set.get("contrastWord", "")
-        if target_word and target_word not in target_tokens:
+        # 한국어 조사가 붙을 수 있으므로 부분 매칭 허용
+        if target_word and not any(target_word in token for token in target_tokens):
+            logger.debug(f"[ContrastSet #{i}] 실패: targetWord '{target_word}' not found in tokens {target_tokens}")
             continue
-        if contrast_word and contrast_word not in contrast_tokens:
+        if contrast_word and not any(contrast_word in token for token in contrast_tokens):
+            logger.debug(f"[ContrastSet #{i}] 실패: contrastWord '{contrast_word}' not found in tokens {contrast_tokens}")
             continue
 
         validated.append(contrast_set)

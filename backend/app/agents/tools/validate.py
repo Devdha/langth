@@ -4,6 +4,7 @@
 """
 
 from dataclasses import dataclass
+import re
 import string
 
 from app.api.v2.schemas import (
@@ -16,6 +17,156 @@ from app.api.v2.schemas import (
 from app.services.phoneme.korean import find_phoneme_matches
 from app.services.phoneme.english import find_phoneme_matches_en
 from app.services.lexical.core_vocabulary import resolve_core_words
+
+
+# 한국어 형용사/동사 어간 추출을 위한 어미 패턴
+_KO_VERB_ENDINGS = [
+    "습니다", "ㅂ니다", "어요", "아요", "여요", "에요", "예요",
+    "었어", "았어", "였어", "겠어", "을래", "ㄹ래",
+    "하게", "하고", "해서", "하면", "해요", "했어",
+    "어서", "아서", "으면", "면", "고", "게", "지",
+    "는", "은", "ㄴ", "을", "ㄹ",
+]
+
+# 어간 그룹: 같은 의미의 활용형들을 그룹으로 묶음
+# key: 대표 어간, value: 해당 어간의 모든 활용형
+_KO_STEM_GROUPS: dict[str, list[str]] = {
+    "맛있": ["맛있"],
+    "맛없": ["맛없"],
+    "예쁘": ["예쁘", "예쁜", "예뻐"],
+    "이쁘": ["이쁘", "이쁜", "이뻐"],
+    "좋": ["좋"],
+    "싫": ["싫"],
+    "크": ["크", "큰", "커"],
+    "작": ["작"],
+    "많": ["많"],
+    "적": ["적"],
+    "높": ["높"],
+    "낮": ["낮"],
+    "길": ["길"],
+    "짧": ["짧"],
+    "넓": ["넓"],
+    "좁": ["좁"],
+    "빠르": ["빠르", "빠른", "빨라"],
+    "느리": ["느리", "느린", "느려"],
+    "무겁": ["무겁", "무거운", "무거워"],
+    "가볍": ["가볍", "가벼운", "가벼워"],
+    "뜨겁": ["뜨겁", "뜨거운", "뜨거워"],
+    "차갑": ["차갑", "차가운", "차가워"],
+    "재미있": ["재미있"],
+    "재미없": ["재미없"],
+    "귀엽": ["귀엽", "귀여운", "귀여워"],
+    "무섭": ["무섭", "무서운", "무서워"],
+    "슬프": ["슬프", "슬픈", "슬퍼"],
+    "기쁘": ["기쁘", "기쁜", "기뻐"],
+}
+
+
+def _extract_korean_stems(text: str) -> list[str]:
+    """한국어 문장에서 형용사/동사 어간을 추출합니다.
+
+    간단한 규칙 기반 추출로, 정확한 형태소 분석은 아닙니다.
+    의미 반복 검출 목적으로만 사용됩니다.
+    같은 어간의 활용형들은 대표 어간으로 정규화됩니다.
+
+    Args:
+        text: 분석할 문장
+
+    Returns:
+        추출된 대표 어간 리스트
+    """
+    stems = []
+
+    # 각 어간 그룹에서 활용형 검색
+    for representative, variants in _KO_STEM_GROUPS.items():
+        count = 0
+        for variant in variants:
+            count += len(re.findall(re.escape(variant), text))
+        # 해당 어간 그룹이 발견된 횟수만큼 대표 어간 추가
+        stems.extend([representative] * count)
+
+    return stems
+
+
+def _check_semantic_repetition(sentence: str, language: Language) -> str | None:
+    """의미 반복을 검사합니다.
+
+    동일한 어간이 2회 이상 등장하면 의미 반복으로 판단합니다.
+    예: "맛있는 라면을 맛있게 먹어요" → 맛있- 2회 반복
+
+    Args:
+        sentence: 검사할 문장
+        language: 언어
+
+    Returns:
+        반복된 어간 (발견 시) 또는 None
+    """
+    if language != Language.KO:
+        return None
+
+    stems = _extract_korean_stems(sentence)
+
+    # 어간별 출현 횟수 계산
+    stem_counts: dict[str, int] = {}
+    for stem in stems:
+        stem_counts[stem] = stem_counts.get(stem, 0) + 1
+
+    # 2회 이상 등장하는 어간 찾기
+    for stem, count in stem_counts.items():
+        if count >= 2:
+            return stem
+
+    return None
+
+
+# 한국어 서술어 어미 패턴 (동사/형용사)
+_KO_PREDICATE_ENDINGS = [
+    # 종결어미
+    "요", "어", "아", "야", "지", "래", "자", "다", "네", "나",
+    "줘", "봐", "워", "써", "해", "게", "고", "며", "면",
+    # 문장부호 포함
+    "어!", "아!", "야!", "다!", "지!", "래!", "요!", "네!", "자!",
+    "어?", "아?", "야?", "지?", "래?", "요?", "나?", "니?",
+    "어~", "아~", "야~", "다~", "요~",
+    # 존댓말
+    "습니다", "ㅂ니다", "세요", "셔요",
+    # 의문형
+    "니", "냐", "까",
+]
+
+
+def _check_has_predicate(sentence: str, language: Language) -> bool:
+    """문장에 서술어가 있는지 검사합니다.
+
+    한국어 문장은 서술어(동사/형용사)로 끝나야 완전한 문장입니다.
+    명사구만 있는 경우 불완전한 문장으로 판단합니다.
+
+    Args:
+        sentence: 검사할 문장
+        language: 언어
+
+    Returns:
+        서술어가 있으면 True
+    """
+    if language != Language.KO:
+        return True  # 영어는 별도 처리 필요
+
+    text = sentence.strip()
+
+    # 문장부호 제거 후 검사
+    for ending in _KO_PREDICATE_ENDINGS:
+        if text.endswith(ending):
+            return True
+
+    # 마지막 토큰 검사
+    words = text.split()
+    if words:
+        last_word = words[-1].rstrip("!?~.")
+        for ending in _KO_PREDICATE_ENDINGS:
+            if last_word.endswith(ending):
+                return True
+
+    return False
 
 
 @dataclass
@@ -122,7 +273,30 @@ def _validate_single(
             fail_reason=f"word_count: expected {request.sentenceLength}, got {word_count}",
         )
 
-    # 2. 음소 검사
+    # 2. 의미 반복 검사 (한국어만)
+    repeated_stem = _check_semantic_repetition(sentence, request.language)
+    if repeated_stem:
+        return ValidationResult(
+            sentence=sentence,
+            passed=False,
+            matched_words=[],
+            word_count=word_count,
+            difficulty=difficulty,
+            fail_reason=f"semantic_repetition: '{repeated_stem}' appears multiple times",
+        )
+
+    # 2.5. 서술어 체크 (짧은 문장에서만, 명사구 필터링)
+    if word_count <= 3 and not _check_has_predicate(sentence, request.language):
+        return ValidationResult(
+            sentence=sentence,
+            passed=False,
+            matched_words=[],
+            word_count=word_count,
+            difficulty=difficulty,
+            fail_reason="no_predicate: sentence lacks a predicate (verb/adjective)",
+        )
+
+    # 3. 음소 검사
     # core_vocabulary(ASD)는 기능적 의사소통이 목표이므로 음소 검증 스킵
     if request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
         core_words = resolve_core_words(request.language.value, request.core_words)

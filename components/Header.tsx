@@ -2,15 +2,17 @@
 
 import { motion } from "framer-motion";
 import { List, Disc, Plus } from "lucide-react";
+import Link from "next/link";
 import { GameMode } from "@/types";
 
 interface HeaderProps {
   currentMode: GameMode;
   onModeChange: (mode: GameMode) => void;
   onNewGame: () => void;
+  isV2?: boolean;
 }
 
-export default function Header({ currentMode, onModeChange, onNewGame }: HeaderProps) {
+export default function Header({ currentMode, onModeChange, onNewGame, isV2 = false }: HeaderProps) {
   return (
     <header className="w-full bg-white/50 backdrop-blur-md border-b-4 border-primary/20 p-3 md:p-4 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-3">
@@ -42,8 +44,52 @@ export default function Header({ currentMode, onModeChange, onNewGame }: HeaderP
           </motion.button>
         </div>
 
+        {/* Version Toggle Link - mobile (between rows) */}
+        <div className="flex justify-center md:hidden">
+          {isV2 ? (
+            <Link
+              href="/"
+              className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 transition-colors"
+            >
+              ← v1으로 돌아가기
+            </Link>
+          ) : (
+            <Link
+              href="/v2"
+              className="text-sm text-purple-500 hover:text-purple-700 font-medium flex items-center gap-1 transition-colors"
+            >
+              v2 체험하기 →
+              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+                Beta
+              </span>
+            </Link>
+          )}
+        </div>
+
         {/* Row 2: Mode Toggle (mobile) / All controls (desktop) */}
         <div className="flex items-center justify-center md:justify-end gap-2 md:gap-4">
+          {/* Version Toggle Link - desktop */}
+          <div className="hidden md:block">
+            {isV2 ? (
+              <Link
+                href="/"
+                className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 transition-colors"
+              >
+                ← v1으로 돌아가기
+              </Link>
+            ) : (
+              <Link
+                href="/v2"
+                className="text-sm text-purple-500 hover:text-purple-700 font-medium flex items-center gap-1 transition-colors"
+              >
+                v2 체험하기 →
+                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+                  Beta
+                </span>
+              </Link>
+            )}
+          </div>
+
           <div className="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100 flex-1 md:flex-none max-w-xs md:max-w-none">
             <button
               onClick={() => onModeChange('list')}

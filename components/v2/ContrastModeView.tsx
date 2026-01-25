@@ -35,6 +35,9 @@ const CATEGORIES_EN = [
   { id: "vowelContrast", label: "Vowels", desc: "Vowel Contrasts" },
 ] as const;
 
+const getDefaultCategory = (language: "ko" | "en") =>
+  language === "en" ? "voicingContrast" : "aspirationContrast";
+
 interface ContrastModeViewProps {
   language?: "ko" | "en";
 }
@@ -46,7 +49,7 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
   // Get data and categories based on language
   const minimalPairsData = currentLanguage === "en" ? englishMinimalPairs : koreanMinimalPairs;
   const categories = currentLanguage === "en" ? CATEGORIES_EN : CATEGORIES_KO;
-  const defaultCategory = currentLanguage === "en" ? "voicingContrast" : "aspirationContrast";
+  const defaultCategory = getDefaultCategory(currentLanguage);
 
   const getFirstPhonemePair = (
     categoryId: string,
@@ -68,7 +71,7 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
 
   const [selectedCategory, setSelectedCategory] = useState<string>(defaultCategory);
   const [selectedPhonemePair, setSelectedPhonemePair] = useState<string | null>(
-    getFirstPhonemePair(defaultCategory)
+    getFirstPhonemePair(defaultCategory, initialLanguage)
   );
 
   // Get phoneme pairs for selected category
@@ -130,13 +133,10 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
           <button
             onClick={() => {
               const nextLanguage: "ko" | "en" = "ko";
-              const nextDefaultCategory =
-                nextLanguage === "en" ? "voicingContrast" : "aspirationContrast";
+              const nextDefaultCategory = getDefaultCategory(nextLanguage);
               setCurrentLanguage(nextLanguage);
               setSelectedCategory(nextDefaultCategory);
-              setSelectedPhonemePair(
-                getFirstPhonemePair(nextDefaultCategory, nextLanguage)
-              );
+              setSelectedPhonemePair(getFirstPhonemePair(nextDefaultCategory, nextLanguage));
             }}
             className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
               currentLanguage === "ko"
@@ -149,13 +149,10 @@ export default function ContrastModeView({ language: initialLanguage = "ko" }: C
           <button
             onClick={() => {
               const nextLanguage: "ko" | "en" = "en";
-              const nextDefaultCategory =
-                nextLanguage === "en" ? "voicingContrast" : "aspirationContrast";
+              const nextDefaultCategory = getDefaultCategory(nextLanguage);
               setCurrentLanguage(nextLanguage);
               setSelectedCategory(nextDefaultCategory);
-              setSelectedPhonemePair(
-                getFirstPhonemePair(nextDefaultCategory, nextLanguage)
-              );
+              setSelectedPhonemePair(getFirstPhonemePair(nextDefaultCategory, nextLanguage));
             }}
             className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
               currentLanguage === "en"

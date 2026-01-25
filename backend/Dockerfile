@@ -32,7 +32,7 @@ ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 
 # Download NLTK data required by g2p-en
-RUN python -c "import nltk; nltk.download('averaged_perceptron_tagger', quiet=True); nltk.download('cmudict', quiet=True)"
+RUN python -c "import nltk; nltk.download('averaged_perceptron_tagger', quiet=True); nltk.download('averaged_perceptron_tagger_eng', quiet=True); nltk.download('cmudict', quiet=True)"
 
 # Expose port
 EXPOSE 8765

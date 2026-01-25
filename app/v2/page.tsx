@@ -247,13 +247,31 @@ export default function V2Page() {
 
   const handleSelectionConfirm = (selected: TherapyItemV2[]) => {
     if (!currentSession) return;
+    const sessionId = currentSession.id;
+    const updatedItems = selected;
+    const updatedContrastSets = pendingContrastSets;
+
     setCurrentSession((prev) =>
-      prev ? { ...prev, items: selected, contrastSets: pendingContrastSets } : null
+      prev ? { ...prev, items: updatedItems, contrastSets: updatedContrastSets } : null
     );
-    setHasUnsavedChanges(true);
+    setHasUnsavedChanges(false);
     setIsSelectionModalOpen(false);
     setPendingCandidates([]);
     setPendingContrastSets([]);
+
+    void (async () => {
+      const saved = await updateSession(sessionId, {
+        items: updatedItems,
+        contrastSets: updatedContrastSets,
+      });
+      if (saved) {
+        setCurrentSession(saved);
+        setSessions((prev) => prev.map((s) => (s.id === sessionId ? saved : s)));
+        setHasUnsavedChanges(false);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+    })();
   };
 
   const handleSelectionClose = () => {

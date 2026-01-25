@@ -299,6 +299,15 @@ def _validate_single(
     # 3. 음소 검사
     # core_vocabulary(ASD)는 기능적 의사소통이 목표이므로 음소 검증 스킵
     if request.therapyApproach == TherapyApproach.CORE_VOCABULARY:
+        if request.language == Language.KO and _has_korean_spacing_antipattern(sentence):
+            return ValidationResult(
+                sentence=sentence,
+                passed=False,
+                matched_words=[],
+                word_count=word_count,
+                difficulty=difficulty,
+                fail_reason="core_vocabulary: spacing anti-pattern",
+            )
         core_words = resolve_core_words(request.language.value, request.core_words)
         if not _contains_core_word(words, core_words, request.language):
             return ValidationResult(
@@ -376,6 +385,16 @@ def _contains_core_word(words: list[str], core_words: list[str], language: Langu
     normalized_words.discard("")
     normalized_core.discard("")
     return not normalized_words.isdisjoint(normalized_core)
+
+
+def _has_korean_spacing_antipattern(sentence: str) -> bool:
+    # e.g. "이거 뭐 야", "저거 해 줘", "이거 해 봐"
+    patterns = [
+        r"(뭐|왜|어디|누구|이거|저거|그거|여기|거기)\s+(야|니|냐|지|죠)\b",
+        r"([가-힣]+)\s+(줘(?:요)?|줬(?:어|어요)|줄(?:래|게|까)|주(?:라|면|고|지|세요))\b",
+        r"([가-힣]+)\s+봐(?:요|줘|라|)\b",
+    ]
+    return any(re.search(p, sentence) for p in patterns)
 
 
 def get_passed_sentences(results: list[ValidationResult]) -> list[dict]:
